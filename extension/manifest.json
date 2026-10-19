@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bulk Meta AI Image Generator",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Upload a JSON file of prompts, generate images one by one through your own Meta AI session, and save them into an organised folder.",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -47,7 +47,6 @@
   "externally_connectable": {
     "matches": [
       "https://bulk-meta-ai-image-generator-web.vercel.app/*",
-      "https://*.vercel.app/*",
       "http://localhost/*",
       "http://127.0.0.1/*"
     ]
