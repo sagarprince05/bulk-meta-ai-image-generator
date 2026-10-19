@@ -380,6 +380,38 @@ async function resumeAfterRestart() {
   }
 }
 
+// ---------- bridge for the hosted website (externally_connectable) ----------
+// The website owns the queue and the output folder; it only asks this extension to run one prompt on meta.ai.
+const externalHandlers = {
+  async ping() { return { ok: true, version: chrome.runtime.getManifest().version }; },
+  async diagnose() {
+    const tabId = await prepareMetaTab(false);
+    return chrome.tabs.sendMessage(tabId, { type: "diagnose" });
+  },
+  async generate({ prompt, timeoutMs = 180000, wantFormat = "png", allVariants = false, newChat = true }) {
+    if (typeof prompt !== "string" || !prompt.trim()) throw new Error("Empty prompt.");
+    const tabId = await prepareMetaTab(newChat);
+    const reply = await chrome.tabs.sendMessage(tabId, { type: "generate", prompt, timeoutMs: Math.min(Math.max(timeoutMs, 20000), 1800000), wantFormat, allVariants });
+    if (!reply) throw Object.assign(new Error("No reply from the meta.ai page."), { retryable: true });
+    if (!reply.ok) return reply;
+    const images = [];
+    for (const img of reply.images) {
+      const prepared = await fetchImageForSaving(img, wantFormat);
+      images.push({ dataUrl: prepared.url.startsWith("data:") ? prepared.url : null, url: img.url, ext: prepared.ext, width: img.width, height: img.height, note: prepared.note || null });
+    }
+    return { ok: true, images };
+  },
+};
+
+externalHandlers.save = async ({ filename, dataUrl, overwrite = false }) => {
+  if (typeof filename !== "string" || !/^[^<>:"|?*\\/]+(\/[^<>:"|?*\\/]+)*$/.test(filename) || filename.includes("..")) throw new Error("Invalid file name.");
+  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) throw new Error("Invalid file data.");
+  const result = await downloadAndWait({ url: dataUrl, filename, conflictAction: overwrite ? "overwrite" : "uniquify", saveAs: false });
+  if (!result || result.exists === false || !(result.fileSize > 0)) throw new Error("The file was not written to disk.");
+  return { ok: true, path: result.filename, size: result.fileSize };
+};
+
+
 // ---------- messages from the dashboard ----------
 
 const handlers = {
@@ -515,6 +547,13 @@ const handlers = {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.type === "keepalive") { sendResponse({ ok: true }); return false; }
+  if (msg && msg.__fromSite) {
+    // Relayed by site-bridge.js from the hosted website; only the website-facing handlers are reachable.
+    const ext = externalHandlers[msg.type];
+    if (!ext) { sendResponse({ ok: false, error: `Unknown request '${msg.type}'` }); return false; }
+    ext(msg).then(sendResponse).catch((exc) => sendResponse({ ok: false, error: exc?.message || String(exc), retryable: exc?.retryable !== false, loginRequired: !!exc?.loginRequired }));
+    return true;
+  }
   const handler = handlers[msg?.type];
   if (!handler) return false;
   handler(msg).then((r) => sendResponse({ ok: true, ...r })).catch((exc) => sendResponse({ ok: false, error: exc?.message || String(exc) }));
@@ -525,37 +564,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener(() => {});
 });
-
-// ---------- bridge for the hosted website (externally_connectable) ----------
-// The website owns the queue and the output folder; it only asks this extension to run one prompt on meta.ai.
-const externalHandlers = {
-  async ping() { return { ok: true, version: chrome.runtime.getManifest().version }; },
-  async diagnose() {
-    const tabId = await prepareMetaTab(false);
-    return chrome.tabs.sendMessage(tabId, { type: "diagnose" });
-  },
-  async generate({ prompt, timeoutMs = 180000, wantFormat = "png", allVariants = false, newChat = true }) {
-    if (typeof prompt !== "string" || !prompt.trim()) throw new Error("Empty prompt.");
-    const tabId = await prepareMetaTab(newChat);
-    const reply = await chrome.tabs.sendMessage(tabId, { type: "generate", prompt, timeoutMs: Math.min(Math.max(timeoutMs, 20000), 1800000), wantFormat, allVariants });
-    if (!reply) throw Object.assign(new Error("No reply from the meta.ai page."), { retryable: true });
-    if (!reply.ok) return reply;
-    const images = [];
-    for (const img of reply.images) {
-      const prepared = await fetchImageForSaving(img, wantFormat);
-      images.push({ dataUrl: prepared.url.startsWith("data:") ? prepared.url : null, url: img.url, ext: prepared.ext, width: img.width, height: img.height, note: prepared.note || null });
-    }
-    return { ok: true, images };
-  },
-};
-
-externalHandlers.save = async ({ filename, dataUrl, overwrite = false }) => {
-  if (typeof filename !== "string" || !/^[^<>:"|?*\\/]+(\/[^<>:"|?*\\/]+)*$/.test(filename) || filename.includes("..")) throw new Error("Invalid file name.");
-  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) throw new Error("Invalid file data.");
-  const result = await downloadAndWait({ url: dataUrl, filename, conflictAction: overwrite ? "overwrite" : "uniquify", saveAs: false });
-  if (!result || result.exists === false || !(result.fileSize > 0)) throw new Error("The file was not written to disk.");
-  return { ok: true, path: result.filename, size: result.fileSize };
-};
 
 chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   const handler = externalHandlers[msg?.type];

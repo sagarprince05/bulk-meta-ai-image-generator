@@ -5,9 +5,39 @@ export function extensionApiAvailable() {
   return typeof chrome !== "undefined" && !!chrome.runtime && typeof chrome.runtime.sendMessage === "function";
 }
 
-function send(msg, timeoutMs = 30000) {
+let relayReady = document.documentElement.hasAttribute("data-bulkgen-bridge");
+window.addEventListener("message", (e) => { if (e.source === window && e.data?.__bulkgen === "ready") relayReady = true; });
+let seq = 0;
+
+function sendViaRelay(msg, timeoutMs) {
   return new Promise((resolve, reject) => {
-    if (!extensionApiAvailable()) return reject(new Error("This browser cannot talk to extensions. Use Chrome, Brave or Edge."));
+    const id = `${Date.now()}-${++seq}`;
+    const timer = setTimeout(() => { window.removeEventListener("message", onMsg); reject(new Error("The extension did not answer in time.")); }, timeoutMs);
+    function onMsg(e) {
+      if (e.source !== window || e.data?.__bulkgen !== "response" || e.data.id !== id) return;
+      clearTimeout(timer);
+      window.removeEventListener("message", onMsg);
+      resolve(e.data.reply);
+    }
+    window.addEventListener("message", onMsg);
+    window.postMessage({ __bulkgen: "request", id, msg }, window.location.origin);
+  });
+}
+
+function relayAvailable() {
+  return relayReady || document.documentElement.hasAttribute("data-bulkgen-bridge");
+}
+
+function send(msg, timeoutMs = 30000) {
+  if (!extensionApiAvailable() || relayAvailable()) {
+    if (relayAvailable()) return sendViaRelay(msg, timeoutMs);
+  }
+  return sendDirect(msg, timeoutMs).catch((exc) => (relayAvailable() ? sendViaRelay(msg, timeoutMs) : Promise.reject(exc)));
+}
+
+function sendDirect(msg, timeoutMs = 30000) {
+  return new Promise((resolve, reject) => {
+    if (!extensionApiAvailable()) return reject(new Error("The extension was not detected on this page. Install it, then reload this page."));
     let done = false;
     const timer = setTimeout(() => { if (!done) { done = true; reject(new Error("The extension did not answer in time.")); } }, timeoutMs);
     try {
