@@ -107,3 +107,12 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; z-index: 10; max-width: 80vw; }
 .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin: 10px 0; }
 @media (max-width: 720px) { .topbar { flex-direction: column; align-items: flex-start; } main { padding: 14px 16px; } td.prompt-cell { max-width: 220px; } }
+
+.paste-toggle { margin-top: 10px; text-align: center; }
+.paste-panel { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: grid; gap: 10px; }
+.paste-row { display: grid; grid-template-columns: 1fr 220px; gap: 10px; }
+.paste-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.paste-row input, .paste-row select, .paste-panel textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+.paste-panel textarea { resize: vertical; min-height: 140px; font-size: 13px; line-height: 1.5; }
+.paste-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+@media (max-width: 720px) { .paste-row { grid-template-columns: 1fr; } }

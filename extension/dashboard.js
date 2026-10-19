@@ -1,4 +1,5 @@
 import { validatePromptFile } from "./lib/validation.js";
+import { splitPrompts, textToPromptFile } from "./lib/parse-prompts.js";
 import { STATUS, RUN, DEFAULT_SETTINGS, projectFolderOf } from "./lib/queue.js";
 
 const $ = (id) => document.getElementById(id);
@@ -55,6 +56,8 @@ dropzone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if
 fileInput.addEventListener("change", () => { const f = fileInput.files[0]; if (f) handleFile(f); fileInput.value = ""; });
 
 async function handleFile(file) {
+  $("btn-download-json").classList.add("hidden");
+  generatedJsonText = null;
   if (!/\.json$/i.test(file.name) && file.type !== "application/json") {
     showValidation({ ok: false, errors: [`"${file.name}" is not a .json file.`], warnings: [] });
     return;
@@ -100,6 +103,8 @@ function showPreview(result) {
 }
 
 function hidePreview() {
+  $("btn-download-json").classList.add("hidden");
+  generatedJsonText = null;
   $("preview").classList.add("hidden");
   pendingValidation = null;
 }
@@ -308,6 +313,60 @@ function toast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.add("hidden"), 4000);
 }
+
+
+// ---------- paste prompts as plain text ----------
+
+let generatedJsonText = null;
+$("btn-toggle-paste").addEventListener("click", () => {
+  const panel = $("paste-panel");
+  panel.classList.toggle("hidden");
+  if (!panel.classList.contains("hidden")) $("paste-text").focus();
+});
+$("btn-paste-txt").addEventListener("click", () => $("paste-file").click());
+$("paste-file").addEventListener("change", async () => {
+  const f = $("paste-file").files[0];
+  if (!f) return;
+  $("paste-text").value = await f.text();
+  if (!$("paste-project").value.trim()) $("paste-project").value = f.name.replace(/\.[^.]*$/, "");
+  $("paste-file").value = "";
+  updatePasteCount();
+});
+$("paste-text").addEventListener("input", updatePasteCount);
+function updatePasteCount() {
+  const n = splitPrompts($("paste-text").value).length;
+  $("paste-count").textContent = n ? `${n} prompt(s) detected` : "";
+}
+$("btn-paste-convert").addEventListener("click", () => {
+  const text = $("paste-text").value;
+  if (!text.trim()) { toast("Paste at least one prompt first."); return; }
+  const project = $("paste-project").value.trim() || "Untitled Project";
+  const file = textToPromptFile(text, { project, defaultAspectRatio: $("paste-aspect").value || null });
+  if (!file.prompts.length) { toast("No prompts were found in the text."); return; }
+  generatedJsonText = JSON.stringify(file, null, 2);
+  const sourceName = `${file.project.replace(/[^\w.-]+/g, "_")}.json`;
+  const result = validatePromptFile(generatedJsonText, sourceName);
+  showValidation(result);
+  if (result.ok) {
+    pendingValidation = result;
+    pendingSourceName = sourceName;
+    showPreview(result);
+    $("btn-download-json").classList.remove("hidden");
+    $("preview").scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    hidePreview();
+  }
+});
+$("btn-download-json").addEventListener("click", () => {
+  if (!generatedJsonText) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([generatedJsonText], { type: "application/json" }));
+  a.download = pendingSourceName || "prompts.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+});
 
 if (!globalThis.chrome?.runtime?.sendMessage) {
   document.body.insertAdjacentHTML("afterbegin", '<div class="validation error" style="margin:16px 24px">This page only works when opened from the extension. Load the extension in Chrome and click its toolbar icon.</div>');

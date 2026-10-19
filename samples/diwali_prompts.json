@@ -1,0 +1,65 @@
+{
+  "project": "Diwali Images",
+  "prompts": [
+    {
+      "id": 1,
+      "filename": "diwali_celebration_traditional_indian",
+      "prompt": "Create a beautiful Diwali celebration in a traditional Indian courtyard decorated with glowing clay diyas, colorful rangoli, marigold garlands, and warm golden fairy lights, photorealistic, cinematic lighting, ultra-detailed, 4K quality, no text, no watermark.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 2,
+      "filename": "diwali_night_indian_palace",
+      "prompt": "Generate a breathtaking Diwali night scene featuring a magnificent Indian palace illuminated by thousands of golden lights, colorful fireworks in the sky, reflections on a lake, royal architecture, cinematic wide-angle photography, ultra-realistic, 4K resolution.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 3,
+      "filename": "diwali_lakshmi_puja_setup",
+      "prompt": "Create an elegant Diwali Lakshmi Puja setup featuring a beautifully decorated goddess Lakshmi idol, brass diyas, lotus flowers, marigold garlands, traditional decorations, warm golden lighting, authentic Indian festive atmosphere, highly detailed, photorealistic.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 4,
+      "filename": "luxurious_diwali_greeting_golden",
+      "prompt": "Design a luxurious Diwali greeting image with golden diyas, sparkling particles, a deep black and burgundy background, elegant gold accents, dramatic lighting, premium festive aesthetics, sophisticated composition, high-end commercial design, no text, no watermark.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 5,
+      "filename": "diwali_night_indian_city",
+      "prompt": "Generate a spectacular Diwali night over an Indian city with colorful fireworks illuminating the sky, houses decorated with glowing string lights, diyas on balconies, vibrant reflections, realistic night photography, cinematic atmosphere, 4K quality.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 6,
+      "filename": "close-up_beautifully_arranged_clay",
+      "prompt": "Create a close-up photograph of beautifully arranged clay diyas surrounded by fresh rose petals, marigold flowers, and intricate rangoli powder, soft golden bokeh in the background, warm festive lighting, shallow depth of field, macro photography, ultra-realistic details.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 7,
+      "filename": "indian_family_celebrating_diwali",
+      "prompt": "Create a beautiful Indian family celebrating Diwali together in traditional ethnic outfits, lighting diyas outside their decorated home, joyful expressions, colorful rangoli, festive decorations, natural poses, warm cinematic lighting, realistic skin textures, professional lifestyle photography.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 8,
+      "filename": "diwali_decoration_luxurious_modern",
+      "prompt": "Generate an enchanting Diwali decoration scene with a luxurious modern Indian living room, floating golden fairy lights, elegant brass lamps, fresh flowers, colorful cushions, illuminated diyas, sophisticated interior design, warm ambient lighting, photorealistic, high detail.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 9,
+      "filename": "overhead_composition_intricate_multicolored",
+      "prompt": "Create a stunning overhead composition of an intricate multicolored Diwali rangoli surrounded by dozens of glowing clay diyas, flower petals, traditional decorative patterns, vibrant pigments, symmetrical arrangement, realistic textures, professional product photography, ultra-detailed, 4K.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 10,
+      "filename": "diwali_grand_indian_temple",
+      "prompt": "Generate a magical Diwali scene featuring a grand Indian temple decorated with marigold garlands, hundreds of glowing oil lamps, golden architectural details, festive lights, a dramatic twilight sky, spiritual atmosphere, cinematic composition, photorealistic, ultra-detailed, 4K resolution, no text, no watermark.",
+      "aspect_ratio": "16:9"
+    }
+  ]
+}
