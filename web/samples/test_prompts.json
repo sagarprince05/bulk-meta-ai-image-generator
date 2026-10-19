@@ -1,0 +1,23 @@
+{
+  "project": "Bible Images",
+  "prompts": [
+    {
+      "id": 1,
+      "filename": "creation_of_world",
+      "prompt": "Create a cinematic, highly detailed image of the creation of the world, inspired by biblical scripture. Divine light illuminating the darkness, dramatic clouds, realistic textures, beautiful composition, 4K quality.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 2,
+      "filename": "noahs_ark",
+      "prompt": "Create a cinematic biblical illustration of Noah's Ark floating on the floodwaters, dramatic sky, realistic wooden ark, detailed waves, atmospheric lighting, high-quality composition.",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": 3,
+      "filename": "moses_red_sea",
+      "prompt": "Create a cinematic biblical scene of Moses standing before the parted Red Sea, towering walls of water, dramatic divine light, realistic details, epic composition.",
+      "aspect_ratio": "16:9"
+    }
+  ]
+}

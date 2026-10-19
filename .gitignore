@@ -1,0 +1,10 @@
+# secrets: the extension signing key must never be published
+keys/extension-private-key.pem
+
+node_modules/
+.vercel/
+*.zip
+!web/extension.zip
+QA/evidence/*.jpg
+.DS_Store
+Thumbs.db

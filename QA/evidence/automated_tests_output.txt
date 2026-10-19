@@ -1,0 +1,37 @@
+✔ Q-03 prompt modification only applies when explicitly enabled (1637.271ms)
+✔ Q-15 delay between images is honoured (4694.7008ms)
+✔ Q-17 repeated Start clicks run a single loop (1861.2959ms)
+✔ Q-18 clear project resets state and leaves files on disk (1558.094ms)
+✔ Q-19 performance: 100 prompts finish with small per-item overhead (6206.277ms)
+✔ F-07 export report writes a timestamped copy of the manifest (1627.6488ms)
+✔ F-09 original format is kept when the adapter returns webp; manifest records it (1571.8701ms)
+✔ F-01b saveAllVariants writes _v2 files; adapter falling back to URL download still verified (1668.751ms)
+✔ Q-08 unskip returns an item to pending and it is then processed (1614.4561ms)
+✔ SEC-04 prompts with quotes, unicode and HTML produce valid JSON reports and exact prompt copies (1577.6927ms)
+✔ Q-06b unexpected adapter exception marks the item for retry rather than crashing the loop (1592.8531ms)
+✔ Q-09b pause while idle-waiting between items takes effect before the next prompt (1556.0769ms)
+✔ pure helpers: prompt text, failure policy, recovery (1.3263ms)
+✔ three prompts run strictly one at a time, files and manifest are written (4835.0634ms)
+✔ failed generations are retried, then reported; Retry Failed re-runs only failures (7851.3933ms)
+✔ a download that never lands on disk is treated as a failure, not a success (1568.8907ms)
+✔ pause finishes the current image, resume continues, stop submits nothing more (5311.6112ms)
+✔ skip, single retry (regenerate) and duplicate filenames get a numbered suffix (4706.804ms)
+✔ pauses after N consecutive failures and when login is required (4631.7441ms)
+✔ recovery after a restart: an interrupted image is retried and the batch completes (4679.8899ms)
+✔ sample file with three prompts validates cleanly (2.4227ms)
+✔ prompt text is preserved exactly, including whitespace (0.1873ms)
+✔ invalid JSON reports line and column (0.1895ms)
+✔ empty file, wrong top level, missing prompts (0.1359ms)
+✔ missing or wrong fields are reported per prompt (0.2636ms)
+✔ aspect ratio validation (0.2201ms)
+✔ warnings for missing project, missing ids, unknown fields, duplicate filenames (0.187ms)
+✔ filenames are made safe and extensions stripped (0.2875ms)
+✔ BOM and very large counts (4.3799ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33708.7347

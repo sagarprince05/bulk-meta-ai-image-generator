@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Bulk Meta AI Image Generator",
+  "version": "1.1.0",
+  "description": "Upload a JSON file of prompts, generate images one by one through your own Meta AI session, and save them into an organised folder.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "downloads",
+    "downloads.ui",
+    "tabs",
+    "alarms",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://www.meta.ai/*",
+    "https://meta.ai/*",
+    "https://*.fbcdn.net/*",
+    "https://*.cdninstagram.com/*"
+  ],
+  "action": {
+    "default_title": "Open Bulk Image Generator"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.meta.ai/*",
+        "https://meta.ai/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA82V2kIr45HSmXaaIflBBXbTqr9ZrGXXkp3Xdxf+IFbksxFxxaP+8NtaQCVQYPtvjv5+Dn1PI6dZjPvlVNkCZYAglChi0cjNvzvXvHmF0r0Ymc6tU16leeYfB99QQcmKEAPGW/n22VrWfbdIdLbxf5FmTaxYT6gRwEr39wJ8L/SKg0YZoJjbDEMVs2r0J/DRwqnjBHfHcpFsLRDCdhuqYJASoXzQeTQjrxBofdeczh3rWwzz7koye4NpW+C7i6jB5y5QlAYJanM/OYTBxqa9T/F2XvkPLNP1XAnvnNGj/avefo1uNp/3HocwsMfcPUGcJvawdd+nTDPRnkPOUwZ+towIDAQAB",
+  "externally_connectable": {
+    "matches": [
+      "https://bulk-meta-ai-images.vercel.app/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ]
+  }
+}

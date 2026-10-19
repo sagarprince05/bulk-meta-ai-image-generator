@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bulk Meta AI Image Generator</title>
+  <meta name="description" content="Upload a JSON file of prompts, generate images one by one through your own Meta AI session, and save them into folders on your computer." />
+  <link rel="icon" href="icons/icon48.png" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="" width="28" height="28" />
+      <div>
+        <h1>Bulk Meta AI Image Generator</h1>
+        <p class="muted">Upload prompts, generate images one by one through your own Meta AI, save them into folders on your computer. Free, nothing is uploaded to any server.</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-test" class="btn ghost">Test meta.ai connection</button>
+      <button id="btn-settings" class="btn ghost">Settings</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" id="setup-card">
+      <div class="card-head"><h2>1. One-time setup</h2></div>
+      <div class="setup-grid">
+        <div class="setup-item">
+          <div class="setup-title"><span id="ext-dot" class="dot"></span> Browser extension (bridge to meta.ai)</div>
+          <p id="ext-status" class="muted small">Checking…</p>
+          <div class="setup-actions">
+            <a id="ext-download" class="btn" href="extension.zip" download>Download extension (.zip)</a>
+            <button id="btn-ext-help" class="btn ghost">How to install</button>
+            <button id="btn-ext-recheck" class="btn ghost">Re-check</button>
+          </div>
+        </div>
+        <div class="setup-item">
+          <div class="setup-title"><span id="dir-dot" class="dot"></span> Output folder on your computer</div>
+          <p id="dir-status" class="muted small">No folder chosen. Images will be saved as downloads instead.</p>
+          <div class="setup-actions">
+            <button id="btn-choose-dir" class="btn">Choose folder (e.g. Desktop)</button>
+            <button id="btn-forget-dir" class="btn ghost">Forget</button>
+          </div>
+        </div>
+        <div class="setup-item">
+          <div class="setup-title"><span id="login-dot" class="dot"></span> Logged in to meta.ai</div>
+          <p id="login-status" class="muted small">Open <a href="https://www.meta.ai" target="_blank" rel="noopener">meta.ai</a> in another tab and log in. The tool types into that tab.</p>
+        </div>
+      </div>
+      <div id="ext-help" class="help hidden">
+        <ol>
+          <li>Download the extension zip above and unzip it anywhere (for example <code>Documents\bulk-meta-ai-extension</code>).</li>
+          <li>In Chrome open <code>chrome://extensions</code> (Brave: <code>brave://extensions</code>, Edge: <code>edge://extensions</code>).</li>
+          <li>Turn on <strong>Developer mode</strong> (top right), click <strong>Load unpacked</strong>, choose the unzipped folder.</li>
+          <li>Come back here and press <strong>Re-check</strong>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="card" id="upload-card">
+      <div class="card-head">
+        <h2>2. Upload prompts</h2>
+        <span id="project-label" class="muted"></span>
+      </div>
+      <div id="dropzone" class="dropzone" tabindex="0">
+        <input type="file" id="file-input" accept=".json,application/json" hidden />
+        <p><strong>Drop a .json file here</strong> or <button type="button" id="btn-browse" class="link">choose a file</button></p>
+        <p class="muted small">Format: {"project": "Name", "prompts": [{"id": 1, "filename": "name", "prompt": "...", "aspect_ratio": "16:9"}]} · <a href="samples/test_prompts.json" download>download a sample</a></p>
+      </div>
+      <div id="validation" class="validation hidden"></div>
+      <div id="preview" class="preview hidden">
+        <div class="preview-head">
+          <strong id="preview-title"></strong>
+          <div>
+            <button id="btn-cancel-preview" class="btn ghost">Cancel</button>
+            <button id="btn-confirm-load" class="btn primary">Use these prompts</button>
+          </div>
+        </div>
+        <ol id="preview-list"></ol>
+      </div>
+    </section>
+
+    <section class="card" id="dashboard-card">
+      <div class="card-head">
+        <h2>3. Project dashboard</h2>
+        <span id="run-badge" class="badge">Idle</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">Project</span><span id="stat-project" class="stat-value">—</span></div>
+        <div class="stat"><span class="stat-label">Total prompts</span><span id="stat-total" class="stat-value">0</span></div>
+        <div class="stat ok"><span class="stat-label">Completed</span><span id="stat-completed" class="stat-value">0</span></div>
+        <div class="stat"><span class="stat-label">Pending</span><span id="stat-pending" class="stat-value">0</span></div>
+        <div class="stat bad"><span class="stat-label">Failed</span><span id="stat-failed" class="stat-value">0</span></div>
+        <div class="stat"><span class="stat-label">Skipped</span><span id="stat-skipped" class="stat-value">0</span></div>
+      </div>
+      <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+      <div id="progress-text" class="muted small">No project loaded.</div>
+      <div id="current" class="current hidden">
+        <div class="current-text">
+          <div class="muted small" id="current-label"></div>
+          <div id="current-prompt" class="current-prompt"></div>
+          <div id="current-status" class="small"></div>
+        </div>
+        <img id="current-preview" alt="" class="current-preview hidden" />
+      </div>
+      <div class="controls">
+        <button id="btn-start" class="btn primary">Start Generation</button>
+        <button id="btn-pause" class="btn">Pause</button>
+        <button id="btn-resume" class="btn">Resume</button>
+        <button id="btn-stop" class="btn danger">Stop</button>
+        <span class="spacer"></span>
+        <button id="btn-retry-failed" class="btn">Retry Failed</button>
+        <button id="btn-export" class="btn">Export Generation Report</button>
+        <button id="btn-clear" class="btn ghost">Clear project</button>
+      </div>
+      <p id="folder-hint" class="muted small"></p>
+      <p class="muted small">Keep this tab open while generating. Progress is saved after every image, so you can close the browser and continue later with Resume.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>4. Prompt queue</h2>
+        <label class="small"><input type="checkbox" id="filter-failed" /> Show failed only</label>
+      </div>
+      <div class="table-wrap">
+        <table id="queue">
+          <thead><tr><th>#</th><th>ID</th><th>Filename</th><th>Prompt</th><th>Status</th><th>Preview</th><th>Actions</th></tr></thead>
+          <tbody id="queue-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Activity log</h2><button id="btn-clear-log" class="btn ghost small">Hide</button></div>
+      <pre id="log" class="log"></pre>
+    </section>
+  </main>
+
+  <dialog id="settings-dialog">
+    <form method="dialog" id="settings-form">
+      <h2>Settings</h2>
+      <div class="grid">
+        <label>Delay between images (seconds)<input type="number" name="delaySeconds" min="0" max="3600" step="1" /></label>
+        <label>Retries per prompt<input type="number" name="maxRetries" min="0" max="10" step="1" /></label>
+        <label>Wait before a retry (seconds)<input type="number" name="retryBackoffSeconds" min="0" max="600" step="1" /></label>
+        <label>Generation timeout (seconds)<input type="number" name="generationTimeoutSeconds" min="20" max="1800" step="1" /></label>
+        <label>Pause after N failures in a row (0 = never)<input type="number" name="pauseAfterConsecutiveFailures" min="0" max="1000" step="1" /></label>
+        <label>Image format
+          <select name="outputFormat"><option value="png">PNG (convert if needed)</option><option value="original">Original format from Meta AI</option></select>
+        </label>
+        <label class="check"><input type="checkbox" name="savePromptCopies" /> Save a .txt copy of each prompt next to the image</label>
+        <label class="check"><input type="checkbox" name="newChatPerPrompt" /> Start a fresh meta.ai chat for every prompt (recommended)</label>
+        <label class="check"><input type="checkbox" name="saveAllVariants" /> Save every image variant Meta AI returns (default: the largest one)</label>
+        <label class="check"><input type="checkbox" name="includeAspectRatioInPrompt" /> Append "Aspect ratio: W:H" from the JSON to each prompt</label>
+        <label class="check"><input type="checkbox" name="modifyPrompts" /> Allow prompt modification (prefix/suffix below)</label>
+        <label>Prompt prefix<input type="text" name="promptPrefix" /></label>
+        <label>Prompt suffix<input type="text" name="promptSuffix" /></label>
+      </div>
+      <p class="muted small">Prompts are sent exactly as written unless prompt modification is enabled.</p>
+      <div class="dialog-actions">
+        <button type="button" id="btn-settings-cancel" class="btn ghost">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="summary-dialog">
+    <h2>Batch finished</h2>
+    <div id="summary-body"></div>
+    <div class="dialog-actions"><button id="btn-summary-close" class="btn primary">Close</button></div>
+  </dialog>
+
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
