@@ -549,6 +549,14 @@ const externalHandlers = {
   },
 };
 
+externalHandlers.save = async ({ filename, dataUrl, overwrite = false }) => {
+  if (typeof filename !== "string" || !/^[^<>:"|?*\\/]+(\/[^<>:"|?*\\/]+)*$/.test(filename) || filename.includes("..")) throw new Error("Invalid file name.");
+  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) throw new Error("Invalid file data.");
+  const result = await downloadAndWait({ url: dataUrl, filename, conflictAction: overwrite ? "overwrite" : "uniquify", saveAs: false });
+  if (!result || result.exists === false || !(result.fileSize > 0)) throw new Error("The file was not written to disk.");
+  return { ok: true, path: result.filename, size: result.fileSize };
+};
+
 chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   const handler = externalHandlers[msg?.type];
   if (!handler) { sendResponse({ ok: false, error: `Unknown request '${msg?.type}'` }); return false; }

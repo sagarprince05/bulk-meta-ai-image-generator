@@ -44,3 +44,10 @@ export function diagnose() {
 export function generateImage({ prompt, timeoutMs, wantFormat, allVariants, newChat }) {
   return send({ type: "generate", prompt, timeoutMs, wantFormat, allVariants, newChat }, timeoutMs + 90000);
 }
+
+/** Save a file through the extension into the browser's Downloads folder, keeping subfolders. */
+export async function saveViaExtension({ filename, dataUrl, overwrite = false }) {
+  const r = await send({ type: "save", filename, dataUrl, overwrite }, 180000);
+  if (!r.ok) throw new Error(r.error || "The extension could not save the file.");
+  return r;
+}

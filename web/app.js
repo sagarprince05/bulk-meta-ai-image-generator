@@ -67,7 +67,7 @@ async function checkExtension() {
 async function refreshFolderStatus() {
   if (!folderPickerSupported()) {
     $("dir-dot").className = "dot warn";
-    $("dir-status").textContent = "This browser cannot write to folders directly; images will be saved to your Downloads folder instead.";
+    $("dir-status").textContent = "This browser has folder access switched off (Brave: enable brave://flags/#file-system-access-api, or use Chrome). Images will be saved to Downloads/Generated_Images/<Project>/ through the extension instead.";
     $("btn-choose-dir").disabled = true;
     return;
   }
@@ -75,7 +75,7 @@ async function refreshFolderStatus() {
   rootHandle = handle;
   if (!handle) {
     $("dir-dot").className = "dot warn";
-    $("dir-status").textContent = "No folder chosen. Images will be saved as downloads instead. Choose a folder like Desktop to get one subfolder per project.";
+    $("dir-status").textContent = "No folder chosen. Images will go to Downloads/Generated_Images/<Project>/ through the extension. Choose a folder like Desktop to save there instead.";
   } else if (permission === "granted") {
     $("dir-dot").className = "dot ok";
     $("dir-status").textContent = `Saving into "${handle.name}" (one subfolder per project).`;
@@ -397,7 +397,7 @@ function render() {
   const pct = c && c.total ? Math.round((done / c.total) * 100) : 0;
   $("progress-bar").style.width = `${pct}%`;
   $("progress-text").textContent = project ? `${done} of ${c.total} processed (${pct}%)` : "No project loaded.";
-  const folder = project ? `${rootHandle ? rootHandle.name : "Downloads"}/${projectFolderOf(project)}/` : "";
+  const folder = project ? `${rootHandle ? rootHandle.name : "Downloads/Generated_Images"}/${projectFolderOf(project)}/` : "";
   $("folder-hint").textContent = project ? `Images are saved to ${folder} along with generation_manifest.json and failed_prompts.json.` : "";
 
   const current = project && run.currentIndex >= 0 ? project.items[run.currentIndex] : null;

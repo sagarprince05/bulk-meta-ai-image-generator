@@ -1,5 +1,8 @@
 // Saves files into a folder the user picked (File System Access API), or falls back to plain downloads.
 import { projectFolderName } from "./validation.js";
+import { saveViaExtension } from "./bridge.js";
+
+export const DOWNLOAD_ROOT = "Generated_Images";
 
 const DB_NAME = "bulkgen";
 const STORE = "handles";
@@ -111,7 +114,11 @@ export class ProjectWriter {
   }
 
   get displayPath() {
-    return this.root ? `${this.root.name}/${this.folderName}/` : `Downloads/${this.folderName}/`;
+    return this.root ? `${this.root.name}/${this.folderName}/` : `Downloads/${DOWNLOAD_ROOT}/${this.folderName}/`;
+  }
+
+  get relativeFolder() {
+    return `${DOWNLOAD_ROOT}/${this.folderName}`;
   }
 
   async ensure() {
@@ -126,14 +133,18 @@ export class ProjectWriter {
       const size = await writeFile(this.dir, name, blob);
       return { path: `${this.displayPath}${name}`, name, size };
     }
-    const name = `${base}.${ext}`;
-    downloadBlob(blob, `${this.folderName}/${name}`);
-    return { path: `${this.displayPath}${name}`, name, size: blob.size };
+    // No folder chosen: ask the extension to download into Downloads/<root>/<project>/ (never overwrites).
+    const r = await saveViaExtension({ filename: `${this.relativeFolder}/${base}.${ext}`, dataUrl: await blobToDataUrl(blob) });
+    const name = r.path.split(/[\/]/).pop();
+    return { path: r.path, name, size: r.size };
   }
 
   async savePromptCopy(stem, text) {
     await this.ensure();
-    if (!this.dir) return null;
+    if (!this.dir) {
+      const r = await saveViaExtension({ filename: `${this.relativeFolder}/prompts/${stem}.txt`, dataUrl: `data:text/plain;charset=utf-8,${encodeURIComponent(text)}` });
+      return r.path;
+    }
     const sub = await this.dir.getDirectoryHandle("prompts", { create: true });
     const name = await uniqueName(sub, stem, "txt");
     await writeFile(sub, name, new Blob([text], { type: "text/plain" }));
@@ -148,8 +159,8 @@ export class ProjectWriter {
       await writeFile(this.dir, target, new Blob([text], { type: "application/json" }));
       return `${this.displayPath}${target}`;
     }
-    downloadBlob(new Blob([text], { type: "application/json" }), `${this.folderName}/${name}`);
-    return `${this.displayPath}${name}`;
+    const r = await saveViaExtension({ filename: `${this.relativeFolder}/${name}`, dataUrl: `data:application/json;charset=utf-8,${encodeURIComponent(text)}`, overwrite });
+    return r.path;
   }
 }
 
@@ -161,4 +172,13 @@ export function downloadBlob(blob, filename) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+export function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
