@@ -1,4 +1,4 @@
-# UI Design Brief: Bulk Meta AI Image Generator
+# UI Design Brief: ImageRush
 
 Use this document to design a new interface (for example in Google Stitch). Section 1 is a ready-to-paste
 prompt; the rest is the full detail the design must cover. The app is a **single-page web dashboard**
@@ -8,7 +8,7 @@ prompt; the rest is the full detail the design must cover. The app is a **single
 
 ## 1. Ready-to-paste Stitch prompt
 
-> Design a clean, modern, desktop-first single-page web app called **"Bulk Meta AI Image Generator"**.
+> Design a clean, modern, desktop-first single-page web app called **"ImageRush"**.
 > Purpose: a user uploads one JSON file containing many image prompts (3 to 500), clicks Start, and the app
 > generates each image one by one through the user's own Meta AI account and saves every image into a folder on
 > the user's computer. Free tool, no server, nothing uploaded.
@@ -51,7 +51,7 @@ prompt; the rest is the full detail the design must cover. The app is a **single
 
 | Item | Detail |
 |---|---|
-| Name | Bulk Meta AI Image Generator |
+| Name | ImageRush |
 | Type | Static single-page web app (HTML/CSS/JS), hosted on Vercel, plus a Chrome/Brave/Edge extension that it talks to |
 | Live URL | https://bulk-meta-ai-image-generator-web.vercel.app |
 | Users | Creators who need many AI images from a list of prompts (e.g. 50 Bible-story scenes for a video) |

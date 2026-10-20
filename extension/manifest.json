@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Bulk Meta AI Image Generator",
-  "version": "1.4.0",
-  "description": "Upload a JSON file of prompts, generate images one by one through your own Meta AI session, and save them into an organised folder.",
+  "name": "ImageRush",
+  "version": "1.4.1",
+  "description": "ImageRush: type or upload prompts, generate images one by one through your own Meta AI session, and save them into organised folders.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",
@@ -20,7 +20,7 @@
     "https://*.cdninstagram.com/*"
   ],
   "action": {
-    "default_title": "Open Bulk Image Generator"
+    "default_title": "Open ImageRush"
   },
   "background": {
     "service_worker": "background.js",

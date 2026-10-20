@@ -111,7 +111,7 @@ export function buildManifest(project, settings, items) {
     project: project.name,
     source_file: project.sourceName,
     output_folder: `${settings.outputRoot}/${projectFolderOf(project)}`,
-    generated_with: "Bulk Meta AI Image Generator (Chrome extension), provider: meta.ai website",
+    generated_with: "ImageRush (Chrome extension), provider: meta.ai website",
     updated_at: new Date().toISOString(),
     totals: c,
     images: items.map((it) => ({

@@ -1,4 +1,4 @@
-# Bulk Meta AI Image Generator: Step-by-step Guide (Hinglish)
+# ImageRush: Step-by-step Guide (Hinglish)
 
 Yeh tool ek browser extension hai jo Chrome ya Brave mein chalta hai. Aap ek JSON file upload karte ho,
 Start dabate ho, aur yeh aapke apne meta.ai account se ek-ek karke images bana ke Downloads folder mein save karta hai.
@@ -13,7 +13,7 @@ Koi payment nahi, koi server nahi.
 3. **Load unpacked** dabao aur yeh folder choose karo:
    `C:\Users\Prince\Desktop\project\image generation\extension`
    (kisi aur ko diya hai toh woh `Bulk-Meta-AI-Image-Generator-v1.0.0.zip` unzip karke us folder ko choose kare).
-4. Extension list mein "Bulk Meta AI Image Generator" dikhne lagega. Toolbar mein puzzle icon dabao aur ise pin kar lo.
+4. Extension list mein "ImageRush" dikhne lagega. Toolbar mein puzzle icon dabao aur ise pin kar lo.
 
 > Agar code update hua ho toh yahin aake extension ke card pe **Reload** (gol arrow) dabana padta hai.
 

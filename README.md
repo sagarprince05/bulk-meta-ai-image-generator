@@ -1,4 +1,4 @@
-# Bulk Meta AI Image Generator (Chrome extension)
+# ImageRush (Chrome extension)
 
 Hosted dashboard: <https://bulk-meta-ai-image-generator-web.vercel.app> (needs the extension installed once).
 

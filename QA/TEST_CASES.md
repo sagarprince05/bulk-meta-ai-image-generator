@@ -1,4 +1,4 @@
-# QA Test Suite: Bulk Meta AI Image Generator (Chrome extension)
+# QA Test Suite: ImageRush (Chrome extension)
 
 Baseline recorded 2026-10-19 before any code change: 17 files, ~2.2k lines, 17 automated tests passing.
 Statuses: NOT RUN, IN PROGRESS, PASS, FAIL, BLOCKED. Evidence lives in `QA/evidence/` and `QA/RESULTS.md`.
