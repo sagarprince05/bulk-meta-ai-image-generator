@@ -17,13 +17,14 @@ let metaView = null; // Meta AI browser docked inside the window
 let panelOpen = true;
 let settings = { outputRoot: null, panelOpen: true };
 let lastStatus = null;
+let statusPushes = 0;
 const settingsPath = () => path.join(app.getPath("userData"), "settings.json");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function loadSettings() {
   try { settings = { ...settings, ...JSON.parse(fssync.readFileSync(settingsPath(), "utf-8")) }; } catch { /* first run */ }
   if (!settings.outputRoot) settings.outputRoot = path.join(app.getPath("desktop"), "ImageRush");
-  panelOpen = settings.panelOpen !== false;
+  panelOpen = true; // the panel must stay rendered (see layout()); it is always visible
 }
 async function saveSettings() {
   await fs.mkdir(path.dirname(settingsPath()), { recursive: true });
@@ -33,7 +34,7 @@ async function saveSettings() {
 // ---------- window + embedded Meta AI panel ----------
 
 function panelWidth() {
-  if (!win || !panelOpen) return 0;
+  if (!win) return 0;
   const [w] = win.getContentSize();
   return Math.max(MIN_PANEL, Math.round(w * 0.42));
 }
@@ -42,8 +43,11 @@ function layout() {
   if (!win || !metaView) return;
   const [w, h] = win.getContentSize();
   const pw = panelWidth();
-  metaView.setBounds(pw ? { x: w - pw, y: 0, width: pw, height: h } : { x: w, y: 0, width: Math.max(MIN_PANEL, Math.round(w * 0.42)), height: h });
-  metaView.setVisible(!!pw);
+  // The panel is never truly hidden: a hidden view stops rendering meta.ai (0x0 viewport, blank page),
+  // which would break login detection and generation. "Hidden" parks it just outside the window instead.
+  const full = Math.max(MIN_PANEL, Math.round(w * 0.42));
+  metaView.setBounds(pw ? { x: w - pw, y: 0, width: pw, height: h } : { x: w + 2, y: 0, width: full, height: h });
+  metaView.setVisible(true);
   win.webContents.send("panel:changed", { width: pw, open: panelOpen });
 }
 
@@ -65,7 +69,20 @@ function createWindow() {
   // Facebook/Instagram login pop-ups must open inside the same session.
   wc.setWindowOpenHandler(() => ({ action: "allow", overrideBrowserWindowOptions: { webPreferences: { partition: META_PARTITION, sandbox: true }, parent: win, modal: false } }));
   wc.on("did-finish-load", () => { refreshStatus().catch(() => {}); });
+  wc.on("did-navigate", () => { refreshStatus().catch(() => {}); });
   wc.on("did-navigate-in-page", () => { refreshStatus().catch(() => {}); });
+  wc.on("console-message", function (event, level, message) {
+    // Electron >= 33 passes an event object with .message; older versions pass (event, level, message).
+    const msg = event && typeof event === "object" && typeof event.message === "string" ? event.message : message;
+    if (typeof msg === "string" && msg.startsWith("__imagerush_status:")) {
+      statusPushes += 1;
+      try { pushStatusToUi(JSON.parse(msg.slice("__imagerush_status:".length))); } catch { /* ignore */ }
+    }
+  });
+  wc.on("did-create-window", (child) => {
+    // Facebook/Instagram login pop-up: when it closes, the main page's login state changes.
+    child.on("closed", () => { setTimeout(() => refreshStatus().catch(() => {}), 300); setTimeout(() => refreshStatus().catch(() => {}), 2000); });
+  });
   wc.loadURL(META_HOME);
 
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
@@ -80,11 +97,9 @@ function createWindow() {
 }
 
 function setPanel(open) {
-  panelOpen = !!open;
-  settings.panelOpen = panelOpen;
-  saveSettings().catch(() => {});
+  panelOpen = true; // kept for API compatibility: the panel cannot be hidden
   layout();
-  if (panelOpen && metaView) metaView.webContents.focus();
+  if (open && metaView) metaView.webContents.focus();
 }
 
 function waitForLoad(wc, timeoutMs = 60000) {
@@ -122,6 +137,11 @@ async function prepareMeta(newChat) {
   return wc;
 }
 
+function pushStatusToUi(st) {
+  lastStatus = { loggedIn: !!st.loggedIn, ready: !!st.ready, url: st.url };
+  if (win && !win.isDestroyed()) win.webContents.send("meta:status", lastStatus);
+}
+
 async function refreshStatus() {
   if (!metaView || !win) return null;
   const wc = metaView.webContents;
@@ -148,8 +168,11 @@ ipcMain.handle("meta:login", async () => {
   return { ok: true };
 });
 ipcMain.handle("meta:logout", async () => {
+  pushStatusToUi({ loggedIn: false, ready: false, url: META_HOME });
   const ses = session.fromPartition(META_PARTITION);
   await ses.clearStorageData();
+  await ses.clearCache().catch(() => {});
+  setPanel(true);
   metaView?.webContents.loadURL(META_HOME);
   return { ok: true };
 });
@@ -268,7 +291,9 @@ app.whenReady().then(() => {
           const img2 = await metaView.webContents.capturePage();
           fssync.writeFileSync(path.join(process.env.IMAGERUSH_SHOT, "meta-panel.png"), img2.toPNG());
         }
-        if (process.env.IMAGERUSH_SMOKE === "meta") console.log("SMOKE_META " + JSON.stringify(await refreshStatus()));
+        if (process.env.IMAGERUSH_SMOKE === "meta") { await sleep(2500); console.log("SMOKE_META " + JSON.stringify({ ...(lastStatus || {}), statusPushes }));
+          const dbg = await metaView.webContents.executeJavaScript(`({ vis: document.visibilityState, ce: document.querySelectorAll('[contenteditable="true"]').length, ta: document.querySelectorAll('textarea').length, w: innerWidth, h: innerHeight, text: (document.body.innerText||'').slice(0,160).replace(/\s+/g,' ') })`, true).catch((e) => ({ err: e.message }));
+          console.log("SMOKE_DBG " + JSON.stringify(dbg)); }
       } catch (exc) { console.log("SMOKE_ERROR " + exc.message); }
       app.exit(0);
     });

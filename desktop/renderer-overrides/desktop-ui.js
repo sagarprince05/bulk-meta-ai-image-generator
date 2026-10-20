@@ -27,9 +27,7 @@ export function initDesktopUi({ onFolderChanged }) {
       <button id="db-choose" class="btn small">Select Output Folder</button>
       <button id="db-open" class="btn ghost small">Open</button>
     </div>
-    <div class="db-item db-right">
-      <button id="db-panel" class="btn ghost small">Hide Meta AI panel</button>
-    </div>`;
+    <div class="db-item db-right muted small">Meta AI runs in the panel on the right.</div>`;
   const main = document.querySelector("main");
   main.insertBefore(bar, main.firstChild);
 
@@ -44,10 +42,14 @@ export function initDesktopUi({ onFolderChanged }) {
   }
   d.meta.onStatus((s) => { status = s || status; renderStatus(); });
   d.meta.status().then((s) => { status = s || status; renderStatus(); }).catch(() => {});
-  setInterval(() => d.meta.status().catch(() => {}), 20000);
+  setInterval(() => d.meta.status().catch(() => {}), 5000);
 
   $("db-login").addEventListener("click", () => d.meta.login());
-  $("db-logout").addEventListener("click", async () => { if (confirm("Log out of Meta AI inside ImageRush?")) { await d.meta.logout(); } });
+  $("db-logout").addEventListener("click", async () => {
+    if (!confirm("Log out of Meta AI inside ImageRush?")) return;
+    status = { loggedIn: false, ready: false }; renderStatus();
+    await d.meta.logout();
+  });
 
   async function refreshFolder() {
     const r = await d.fs.getRoot();
@@ -58,13 +60,7 @@ export function initDesktopUi({ onFolderChanged }) {
   $("db-choose").addEventListener("click", async () => { const r = await d.fs.chooseRoot(); $("db-folder").textContent = r.root; if (r.changed) onFolderChanged?.(r.root); });
   $("db-open").addEventListener("click", () => d.fs.openFolder(""));
 
-  let panelOpen = true;
-  function renderPanel(p) {
-    panelOpen = p.open;
-    document.body.style.marginRight = `${p.width}px`;
-    $("db-panel").textContent = panelOpen ? "Hide Meta AI panel" : "Show Meta AI panel";
-  }
+  function renderPanel(p) { document.body.style.marginRight = `${p.width}px`; }
   d.panel.onChange(renderPanel);
   d.panel.get().then(renderPanel).catch(() => {});
-  $("db-panel").addEventListener("click", () => d.panel.set(!panelOpen));
 }

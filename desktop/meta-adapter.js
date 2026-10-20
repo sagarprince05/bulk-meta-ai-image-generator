@@ -14,8 +14,10 @@
   };
   const dist = (a, b) => Math.hypot(a.left + a.width / 2 - (b.left + b.width / 2), a.top + a.height / 2 - (b.top + b.height / 2));
 
+  // When the panel is hidden the page has no layout, so fall back to "exists in the DOM".
+  const present = (el) => (document.visibilityState === "hidden" ? !!el && el.isConnected && !el.closest("[hidden]") : isVisible(el));
   function findComposer() {
-    const candidates = [...document.querySelectorAll('[contenteditable="true"][role="textbox"], [contenteditable="true"], textarea')].filter(isVisible);
+    const candidates = [...document.querySelectorAll('[contenteditable="true"][role="textbox"], [contenteditable="true"], textarea')].filter(present);
     if (!candidates.length) return null;
     const score = (el) => {
       let s = 0;
@@ -160,5 +162,20 @@
     return { ok: true, url: location.href, loggedIn: !loginWallPresent(), composerFound: !!composer, composerKind: composer ? composer.tagName.toLowerCase() : null, sendButtonFound: !!findSendButton(composer), visibleImages: candidateImages().length };
   }
 
-  window.__imagerush = { generate, diagnose, newChat };
+  // Status watcher: reports login/ready changes the moment the page changes (meta.ai is a single-page app).
+  let lastSig = "";
+  function pushStatus(force) {
+    const c = findComposer();
+    const st = { loggedIn: !loginWallPresent(), ready: !!c, url: location.href };
+    const sig = JSON.stringify(st);
+    if (force || sig !== lastSig) { lastSig = sig; console.log("__imagerush_status:" + sig); }
+  }
+  const mo = new MutationObserver(() => { clearTimeout(mo._t); mo._t = setTimeout(() => pushStatus(false), 150); });
+  mo.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "aria-label"] });
+  setInterval(() => pushStatus(false), 1000);
+  document.addEventListener("visibilitychange", () => pushStatus(true));
+  window.addEventListener("focus", () => pushStatus(true));
+  setTimeout(() => pushStatus(true), 0);
+
+  window.__imagerush = { generate, diagnose, newChat, pushStatus };
 })();
