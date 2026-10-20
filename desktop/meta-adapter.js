@@ -90,7 +90,7 @@
   /** Start a fresh conversation without reloading the page: the sidebar "New chat" button or its shortcut. */
   async function newChat() {
     const beforeUrl = location.href;
-    const btn = [...document.querySelectorAll('a, button, [role="button"], [role="link"]')].find((el) => isVisible(el) && /^\s*new chat\b/i.test(el.textContent || "") || /new chat/i.test(el.getAttribute("aria-label") || ""));
+    const btn = [...document.querySelectorAll('a, button, [role="button"], [role="link"]')].find((el) => isVisible(el) && (/^\s*new chat/i.test(el.textContent || "") || /new chat/i.test(el.getAttribute("aria-label") || "")));
     if (btn) btn.click();
     else document.dispatchEvent(new KeyboardEvent("keydown", { key: "O", code: "KeyO", keyCode: 79, ctrlKey: true, shiftKey: true, bubbles: true }));
     // Ready when the URL left the old conversation (or was already home) and the composer is present and empty.

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ImageRush",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "ImageRush: type or upload prompts, generate images one by one through your own Meta AI session, and save them into organised folders.",
   "minimum_chrome_version": "116",
   "permissions": [
