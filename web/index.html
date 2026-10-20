@@ -3,161 +3,161 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ImageRush - bulk images with Meta AI</title>
-  <meta name="description" content="Upload a JSON file of prompts, generate images one by one through your own Meta AI session, and save them into folders on your computer." />
+  <title>ImageRush - fast image maker for everyday creators</title>
+  <meta name="description" content="Describe your images in plain English, press one button, and get finished pictures saved into a folder on your computer." />
   <link rel="icon" href="icons/icon48.png" />
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <img src="icons/icon48.png" alt="" width="28" height="28" />
-      <div>
-        <h1>ImageRush</h1>
-        <p class="muted">Upload prompts, generate images one by one through your own Meta AI, save them into folders on your computer. Free, nothing is uploaded to any server.</p>
+  <div class="window">
+    <header class="titlebar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg></span>
+        <span class="brand-name">ImageRush</span>
+        <span class="brand-tag">Fast image maker for everyday creators</span>
       </div>
-    </div>
-    <div class="topbar-actions">
-      <button id="btn-test" class="btn ghost">Test meta.ai connection</button>
-      <button id="btn-settings" class="btn ghost">Settings</button>
-    </div>
-  </header>
+      <div class="title-actions">
+        <button id="btn-select-folder-top" class="btn ghost small"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Select Folder</button>
+      </div>
+    </header>
 
-  <main>
-    <section class="card" id="setup-card">
-      <div class="card-head"><h2>1. One-time setup</h2></div>
-      <div class="setup-grid">
-        <div class="setup-item">
-          <div class="setup-title"><span id="ext-dot" class="dot"></span> Browser extension (bridge to meta.ai)</div>
-          <p id="ext-status" class="muted small">Checking…</p>
-          <div class="setup-actions">
-            <a id="ext-download" class="btn" href="extension.zip" download>Download extension (.zip)</a>
-            <a class="btn ghost" href="https://github.com/sagarprince05/bulk-meta-ai-image-generator/releases/latest" target="_blank" rel="noopener">Or get the Windows app (.exe)</a>
-            <button id="btn-ext-help" class="btn ghost">How to install</button>
-            <button id="btn-ext-recheck" class="btn ghost">Re-check</button>
-            <button id="btn-open-meta" class="btn hidden">Open Meta AI window</button>
+    <div class="workspace">
+      <section class="pane-left">
+        <div class="statusbar">
+          <div id="conn-pill" class="pill pill-off">
+            <span class="dot"></span>
+            <span id="conn-text">Checking…</span>
+            <button id="btn-login" class="pill-btn hidden">Log in to Meta AI</button>
           </div>
-        </div>
-        <div class="setup-item">
-          <div class="setup-title"><span id="dir-dot" class="dot"></span> Output folder on your computer</div>
-          <p id="dir-status" class="muted small">No folder chosen. Images will be saved as downloads instead.</p>
-          <div class="setup-actions">
-            <button id="btn-choose-dir" class="btn">Choose folder (e.g. Desktop)</button>
-            <button id="btn-forget-dir" class="btn ghost">Forget</button>
+          <div class="folder-chip" title="Where your images are saved">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span class="folder-text">Save to: <strong id="folder-path">—</strong></span>
+            <button id="btn-change-folder" class="link">Change folder</button>
+            <button id="btn-open-folder" class="link">Open folder</button>
           </div>
+          <button id="btn-settings" class="icon-only" title="Settings"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
         </div>
-        <div class="setup-item">
-          <div class="setup-title"><span id="login-dot" class="dot"></span> Logged in to meta.ai</div>
-          <p id="login-status" class="muted small">Open <a href="https://www.meta.ai" target="_blank" rel="noopener">meta.ai</a> and log in once. The tool types into that window/tab.</p>
+
+        <main class="scroll">
+          <section class="card" id="create-card">
+            <div class="card-head">
+              <h2>What do you want to create?</h2>
+              <span class="caption">Simple natural English</span>
+            </div>
+            <div id="composer"></div>
+            <div class="tip"><svg class="ic" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg> Tip: paste a list, we will split it for you.</div>
+          </section>
+
+          <section class="card success hidden" id="success-panel">
+            <div class="success-row">
+              <div class="success-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></div>
+              <div class="success-text">
+                <h3 id="success-heading">Your images are ready</h3>
+                <p id="success-sub" class="muted">Saved straight to your folder.</p>
+              </div>
+              <div class="success-actions">
+                <button id="btn-success-open" class="btn success-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Open folder</button>
+                <button id="btn-success-retry" class="btn danger-btn hidden">Try again</button>
+                <button id="btn-success-more" class="btn">Create more</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" id="images-card">
+            <div class="card-head">
+              <div class="head-left"><h2>Your images</h2><span id="images-count" class="count-badge">0 images</span></div>
+              <div class="head-right">
+                <label class="caption check"><input type="checkbox" id="filter-failed" /> Needs retry only</label>
+                <button id="btn-clear" class="link">Clear list</button>
+              </div>
+            </div>
+            <div id="queue-body" class="rows"></div>
+          </section>
+
+          <section class="activity" id="activity">
+            <button id="btn-activity" class="activity-head"><span><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg> Activity</span><span id="activity-chevron">▾</span></button>
+            <pre id="log" class="log hidden"></pre>
+          </section>
+        </main>
+
+        <footer class="actionbar">
+          <div class="progress-wrap">
+            <div class="progress-row"><span id="progress-text">Ready to begin</span><span id="progress-pct">0%</span></div>
+            <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-primary" class="btn primary big">Create all images</button>
+            <button id="btn-stop" class="btn stop">Stop</button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="pane-right" id="web-aside">
+        <div class="aside-head"><span class="aside-title">Meta AI</span><span class="caption">Your images are made here</span></div>
+        <div class="aside-body">
+          <div class="aside-card" id="ext-card">
+            <div class="aside-row"><span id="ext-dot" class="dot"></span><strong>ImageRush helper for your browser</strong></div>
+            <p id="ext-status" class="muted small">Checking…</p>
+            <div class="aside-actions">
+              <a id="ext-download" class="btn small" href="extension.zip" download>Download helper (.zip)</a>
+              <button id="btn-ext-help" class="btn ghost small">How to install</button>
+              <button id="btn-ext-recheck" class="btn ghost small">Re-check</button>
+              <a class="btn ghost small" href="https://github.com/sagarprince05/bulk-meta-ai-image-generator/releases/latest" target="_blank" rel="noopener">Windows app (.exe)</a>
+            </div>
+            <ol id="ext-help" class="help hidden">
+              <li>Download the helper zip and unzip it anywhere.</li>
+              <li>Open <code>chrome://extensions</code> (Brave: <code>brave://extensions</code>), turn on Developer mode, click Load unpacked, choose the unzipped folder.</li>
+              <li>Come back and press Re-check.</li>
+            </ol>
+          </div>
+          <div class="aside-card">
+            <div class="aside-row"><span id="login-dot" class="dot"></span><strong>Meta AI login</strong></div>
+            <p id="login-status" class="muted small">Open <a href="https://www.meta.ai" target="_blank" rel="noopener">meta.ai</a> in a tab and log in once. ImageRush types into that tab.</p>
+            <div class="aside-actions"><button id="btn-test" class="btn small">Check connection</button></div>
+          </div>
+          <div class="aside-card">
+            <div class="aside-row"><span id="dir-dot" class="dot"></span><strong>Where images are saved</strong></div>
+            <p id="dir-status" class="muted small"></p>
+            <div class="aside-actions"><button id="btn-choose-dir" class="btn small">Choose folder</button><button id="btn-forget-dir" class="btn ghost small">Forget</button></div>
+          </div>
+          <p class="caption center">Images are saved directly to your computer. Nothing is stored in external clouds.</p>
         </div>
-      </div>
-      <div id="ext-help" class="help hidden">
-        <ol>
-          <li>Download the extension zip above and unzip it anywhere (for example <code>Documents\bulk-meta-ai-extension</code>).</li>
-          <li>In Chrome open <code>chrome://extensions</code> (Brave: <code>brave://extensions</code>, Edge: <code>edge://extensions</code>).</li>
-          <li>Turn on <strong>Developer mode</strong> (top right), click <strong>Load unpacked</strong>, choose the unzipped folder.</li>
-          <li>Come back here and press <strong>Re-check</strong>.</li>
-        </ol>
-      </div>
-    </section>
+      </aside>
+    </div>
 
-    <section class="card" id="upload-card">
-      <div class="card-head">
-        <h2>2. Prompts</h2>
-        <span class="meta-badge" id="project-label"><i></i> Images are generated with Meta AI (your own login)</span>
-      </div>
-      <div id="composer"></div>
-    </section>
-
-    <section class="card" id="dashboard-card">
-      <div class="card-head">
-        <h2>3. Project dashboard</h2>
-        <span id="run-badge" class="badge">Idle</span>
-      </div>
-      <div class="stats">
-        <div class="stat"><span class="stat-label">Project</span><span id="stat-project" class="stat-value">—</span></div>
-        <div class="stat"><span class="stat-label">Total prompts</span><span id="stat-total" class="stat-value">0</span></div>
-        <div class="stat ok"><span class="stat-label">Completed</span><span id="stat-completed" class="stat-value">0</span></div>
-        <div class="stat"><span class="stat-label">Pending</span><span id="stat-pending" class="stat-value">0</span></div>
-        <div class="stat bad"><span class="stat-label">Failed</span><span id="stat-failed" class="stat-value">0</span></div>
-        <div class="stat"><span class="stat-label">Skipped</span><span id="stat-skipped" class="stat-value">0</span></div>
-      </div>
-      <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
-      <div id="progress-text" class="muted small">No project loaded.</div>
-      <div id="current" class="current hidden">
-        <div class="current-text">
-          <div class="muted small" id="current-label"></div>
-          <div id="current-prompt" class="current-prompt"></div>
-          <div id="current-status" class="small"></div>
-        </div>
-        <img id="current-preview" alt="" class="current-preview hidden" />
-      </div>
-      <div class="controls">
-        <button id="btn-start" class="btn primary">Start Generation</button>
-        <button id="btn-pause" class="btn">Pause</button>
-        <button id="btn-resume" class="btn">Resume</button>
-        <button id="btn-stop" class="btn danger">Stop</button>
-        <span class="spacer"></span>
-        <button id="btn-retry-failed" class="btn">Retry Failed</button>
-        <button id="btn-export" class="btn">Export Generation Report</button>
-        <button id="btn-open-folder" class="btn hidden">Open Output Folder</button>
-        <button id="btn-clear" class="btn ghost">Clear project</button>
-      </div>
-      <p id="folder-hint" class="muted small"></p>
-      <p class="muted small">Keep this tab open while generating. Progress is saved after every image, so you can close the browser and continue later with Resume.</p>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>4. Prompt queue</h2>
-        <label class="small"><input type="checkbox" id="filter-failed" /> Show failed only</label>
-      </div>
-      <div class="table-wrap">
-        <table id="queue">
-          <thead><tr><th>#</th><th>ID</th><th>Filename</th><th>Prompt</th><th>Status</th><th>Preview</th><th>Actions</th></tr></thead>
-          <tbody id="queue-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head"><h2>Activity log</h2><button id="btn-clear-log" class="btn ghost small">Hide</button></div>
-      <pre id="log" class="log"></pre>
-    </section>
-  </main>
+    <footer class="microbar">
+      <span><span class="dot ok"></span> <span id="footer-status">Ready</span></span>
+      <span id="footer-version">ImageRush</span>
+    </footer>
+  </div>
 
   <dialog id="settings-dialog">
     <form method="dialog" id="settings-form">
       <h2>Settings</h2>
       <div class="grid">
-        <label>Delay between images (seconds)<input type="number" name="delaySeconds" min="0" max="3600" step="1" /></label>
-        <label>Retries per prompt<input type="number" name="maxRetries" min="0" max="10" step="1" /></label>
+        <label>Pause between images (seconds)<input type="number" name="delaySeconds" min="0" max="3600" step="1" /></label>
+        <label>Retries per image<input type="number" name="maxRetries" min="0" max="10" step="1" /></label>
         <label>Wait before a retry (seconds)<input type="number" name="retryBackoffSeconds" min="0" max="600" step="1" /></label>
-        <label>Generation timeout (seconds)<input type="number" name="generationTimeoutSeconds" min="20" max="1800" step="1" /></label>
+        <label>Give up after (seconds)<input type="number" name="generationTimeoutSeconds" min="20" max="1800" step="1" /></label>
         <label>Pause after N failures in a row (0 = never)<input type="number" name="pauseAfterConsecutiveFailures" min="0" max="1000" step="1" /></label>
         <label>Image format
-          <select name="outputFormat"><option value="png">PNG (convert if needed)</option><option value="original">Original format from Meta AI</option></select>
+          <select name="outputFormat"><option value="png">PNG (recommended)</option><option value="original">Original format from Meta AI</option></select>
         </label>
-        <label class="check"><input type="checkbox" name="savePromptCopies" /> Save a .txt copy of each prompt next to the image</label>
-        <label class="check"><input type="checkbox" name="newChatPerPrompt" /> Start a fresh meta.ai chat for every prompt (recommended)</label>
-        <label class="check"><input type="checkbox" name="saveAllVariants" /> Save every image variant Meta AI returns (default: the largest one)</label>
-        <label class="check"><input type="checkbox" name="includeAspectRatioInPrompt" /> Append "Aspect ratio: W:H" from the JSON to each prompt</label>
-        <label class="check"><input type="checkbox" name="modifyPrompts" /> Allow prompt modification (prefix/suffix below)</label>
-        <label>Prompt prefix<input type="text" name="promptPrefix" /></label>
-        <label>Prompt suffix<input type="text" name="promptSuffix" /></label>
+        <label class="check"><input type="checkbox" name="savePromptCopies" /> Save a text copy of each description next to the image</label>
+        <label class="check"><input type="checkbox" name="newChatPerPrompt" /> Start a fresh Meta AI chat for every image (recommended)</label>
+        <label class="check"><input type="checkbox" name="saveAllVariants" /> Save every variant Meta AI returns</label>
+        <label class="check"><input type="checkbox" name="includeAspectRatioInPrompt" /> Tell Meta AI the picture shape (16:9, 9:16, 1:1)</label>
+        <label class="check"><input type="checkbox" name="modifyPrompts" /> Add text before/after every description</label>
+        <label>Text before<input type="text" name="promptPrefix" /></label>
+        <label>Text after<input type="text" name="promptSuffix" /></label>
       </div>
-      <p class="muted small">Prompts are sent exactly as written unless prompt modification is enabled.</p>
       <div class="dialog-actions">
+        <button type="button" id="btn-export" class="btn ghost">Export report</button>
+        <span class="spacer"></span>
         <button type="button" id="btn-settings-cancel" class="btn ghost">Cancel</button>
         <button type="submit" class="btn primary">Save</button>
       </div>
     </form>
-  </dialog>
-
-  <dialog id="summary-dialog">
-    <h2>Batch finished</h2>
-    <div id="summary-body"></div>
-    <div class="dialog-actions"><button id="btn-summary-close" class="btn primary">Close</button></div>
   </dialog>
 
   <div id="toast" class="toast hidden"></div>

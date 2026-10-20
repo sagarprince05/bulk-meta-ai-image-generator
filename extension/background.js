@@ -585,8 +585,9 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
 });
 
 async function openDashboard() {
-  const url = chrome.runtime.getURL("dashboard.html");
-  const tabs = await chrome.tabs.query({ url });
+  // The extension has no UI of its own any more: the website is the dashboard.
+  const url = "https://bulk-meta-ai-image-generator-web.vercel.app/";
+  const tabs = await chrome.tabs.query({ url: `${url}*` });
   if (tabs[0]) {
     await chrome.tabs.update(tabs[0].id, { active: true });
     await chrome.windows.update(tabs[0].windowId, { focused: true });

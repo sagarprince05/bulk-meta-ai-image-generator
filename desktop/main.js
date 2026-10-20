@@ -278,11 +278,14 @@ app.whenReady().then(() => {
       try {
         const info = await win.webContents.executeJavaScript(`({
           title: document.title,
-          setupHidden: document.getElementById("setup-card").classList.contains("hidden"),
-          bar: document.getElementById("desktop-bar")?.innerText.replace(/\\s+/g, " ").slice(0, 160),
+          conn: document.getElementById("conn-text").textContent,
+          loginBtnVisible: !document.getElementById("btn-login").classList.contains("hidden"),
+          folder: document.getElementById("folder-path").textContent,
+          asideHidden: document.getElementById("web-aside").classList.contains("hidden"),
           aiVisible: !document.querySelector("[data-mode=ai]").classList.contains("hidden"),
           composer: !!document.getElementById("cmp-send"),
-          bodyMargin: getComputedStyle(document.body).marginRight,
+          panelVar: getComputedStyle(document.documentElement).getPropertyValue("--panel").trim(),
+          primary: document.getElementById("btn-primary").textContent,
         })`, true);
         console.log("SMOKE " + JSON.stringify(info));
         if (process.env.IMAGERUSH_SHOT) {
