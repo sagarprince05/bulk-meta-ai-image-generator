@@ -24,42 +24,10 @@
   <main>
     <section class="card" id="upload-card">
       <div class="card-head">
-        <h2>1. Upload prompts</h2>
-        <span id="project-label" class="muted"></span>
+        <h2>2. Prompts</h2>
+        <span class="meta-badge" id="project-label"><i></i> Images are generated with Meta AI (your own login)</span>
       </div>
-      <div id="dropzone" class="dropzone" tabindex="0">
-        <input type="file" id="file-input" accept=".json,application/json" hidden />
-        <p><strong>Drop a .json file here</strong> or <button type="button" id="btn-browse" class="link">choose a file</button></p>
-        <p class="muted small">Format: {"project": "Name", "prompts": [{"id": 1, "filename": "name", "prompt": "...", "aspect_ratio": "16:9"}]}</p>
-      </div>
-      <div class="paste-toggle"><button type="button" id="btn-toggle-paste" class="link">Or paste prompts as plain text instead</button></div>
-      <div id="paste-panel" class="paste-panel hidden">
-        <div class="paste-row">
-          <label>Project name<input type="text" id="paste-project" placeholder="e.g. Diwali Images" /></label>
-          <label>Aspect ratio for all
-            <select id="paste-aspect"><option value="16:9">16:9 (landscape)</option><option value="9:16">9:16 (portrait)</option><option value="1:1">1:1 (square)</option><option value="4:3">4:3</option><option value="3:4">3:4</option><option value="">None</option></select>
-          </label>
-        </div>
-        <textarea id="paste-text" rows="10" placeholder="One prompt per line, a numbered list (1. 2. 3.), or paragraphs separated by a blank line.&#10;Add [9:16] inside a prompt to give it its own aspect ratio."></textarea>
-        <div class="paste-actions">
-          <button type="button" id="btn-paste-convert" class="btn primary">Convert to prompts</button>
-          <button type="button" id="btn-paste-txt" class="btn ghost">Load a .txt file</button>
-          <input type="file" id="paste-file" accept=".txt,text/plain" hidden />
-          <span id="paste-count" class="muted small"></span>
-        </div>
-      </div>
-      <div id="validation" class="validation hidden"></div>
-      <div id="preview" class="preview hidden">
-        <div class="preview-head">
-          <strong id="preview-title"></strong>
-          <div>
-            <button id="btn-download-json" class="btn ghost hidden" title="Save the generated JSON file for later">Download JSON</button>
-            <button id="btn-cancel-preview" class="btn ghost">Cancel</button>
-            <button id="btn-confirm-load" class="btn primary">Use these prompts</button>
-          </div>
-        </div>
-        <ol id="preview-list"></ol>
-      </div>
+      <div id="composer"></div>
     </section>
 
     <section class="card" id="dashboard-card">

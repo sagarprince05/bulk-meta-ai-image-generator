@@ -1,5 +1,5 @@
 import { validatePromptFile } from "./lib/validation.js";
-import { splitPrompts, textToPromptFile } from "./lib/parse-prompts.js";
+import { initComposer } from "./lib/composer.js";
 import {
   STATUS, RUN, DEFAULT_SETTINGS, buildPromptText, newProjectState, counts, nextPendingIndex,
   applyFailure, recoverInterrupted, resetForRetry, buildManifest, buildFailedReport, projectFolderOf,
@@ -16,8 +16,6 @@ const LOG_LIMIT = 300;
 const state = loadState();
 let rootHandle = null;
 let loopActive = false;
-let pendingValidation = null;
-let pendingSourceName = "";
 let shownSummaryFor = null;
 let extInfo = { installed: false };
 
@@ -112,57 +110,31 @@ $("btn-test").addEventListener("click", async () => {
   }
 });
 
-// ---------- upload ----------
 
-const dropzone = $("dropzone");
-const fileInput = $("file-input");
-$("btn-browse").addEventListener("click", () => fileInput.click());
-dropzone.addEventListener("click", (e) => { if (e.target === dropzone || e.target.tagName === "P" || e.target.tagName === "STRONG") fileInput.click(); });
-dropzone.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") fileInput.click(); });
-["dragenter", "dragover"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("drag"); }));
-["dragleave", "drop"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove("drag"); }));
-dropzone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
-fileInput.addEventListener("change", () => { const f = fileInput.files[0]; if (f) handleFile(f); fileInput.value = ""; });
+// ---------- prompts -> project ----------
 
-async function handleFile(file) {
-  $("btn-download-json").classList.add("hidden");
-  generatedJsonText = null;
-  if (!/\.json$/i.test(file.name) && file.type !== "application/json") return showValidation({ ok: false, errors: [`"${file.name}" is not a .json file.`], warnings: [] });
-  if (file.size > 50 * 1024 * 1024) return showValidation({ ok: false, errors: ["The file is larger than 50 MB."], warnings: [] });
-  const result = validatePromptFile(await file.text(), file.name);
-  showValidation(result);
-  if (result.ok) { pendingValidation = result; pendingSourceName = file.name; showPreview(result); } else hidePreview();
-}
-
-function showValidation(result) {
-  const box = $("validation");
-  box.classList.remove("hidden", "error", "warn", "ok");
-  const list = (arr) => `<ul>${arr.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`;
-  if (!result.ok) { box.classList.add("error"); box.innerHTML = `<strong>The file cannot be used.</strong>${list(result.errors)}`; }
-  else if (result.warnings.length) { box.classList.add("warn"); box.innerHTML = `<strong>${result.items.length} prompt(s) found, with notes:</strong>${list(result.warnings)}`; }
-  else { box.classList.add("ok"); box.innerHTML = `<strong>${result.items.length} prompt(s) found. The file looks good.</strong>`; }
-}
-function showPreview(result) {
-  $("preview").classList.remove("hidden");
-  $("preview-title").textContent = `Project "${result.projectName}" with ${result.items.length} prompt(s). Review, then confirm.`;
-  $("preview-list").innerHTML = result.items.map((it) => `<li><code>${esc(String(it.promptId))}</code> <strong>${esc(it.filename)}</strong>${it.aspectRatio ? ` <span class="muted small">(${it.aspectRatio})</span>` : ""}<br><span class="muted">${esc(it.prompt)}</span></li>`).join("");
-}
-function hidePreview() {
-  $("btn-download-json").classList.add("hidden");
-  generatedJsonText = null; $("preview").classList.add("hidden"); pendingValidation = null; }
-$("btn-cancel-preview").addEventListener("click", () => { hidePreview(); $("validation").classList.add("hidden"); });
-$("btn-confirm-load").addEventListener("click", () => {
-  if (!pendingValidation) return;
-  if (state.project && isBusy()) return toast("Stop or pause the running batch before loading a new file.");
-  if (state.project && !confirm(`Replace the current project "${state.project.name}"? Saved images stay on disk.`)) return;
-  state.project = newProjectState(pendingValidation, pendingSourceName);
+function loadProjectFromValidation(validation, sourceName) {
+  if (state.project && isBusy()) { toast("Stop or pause the running batch before loading new prompts."); return false; }
+  if (state.project && state.project.items.some((it) => it.status !== STATUS.COMPLETED) && !confirm(`Replace the current project "${state.project.name}"? Saved images stay on disk.`)) return false;
+  state.project = newProjectState(validation, sourceName);
   state.run = { state: RUN.IDLE, currentIndex: -1, consecutiveFailures: 0, summary: null };
   state.log = [];
-  log("info", `Loaded "${state.project.name}" with ${state.project.items.length} prompts from ${pendingSourceName}.`);
-  hidePreview();
-  $("validation").classList.add("hidden");
+  log("info", `Loaded "${state.project.name}" with ${state.project.items.length} prompts.`);
   save();
-  toast("Prompts loaded. Press Start Generation when ready.");
+  return true;
+}
+
+const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+initComposer({
+  root: $("composer"),
+  aiEndpoint: isLocal ? "https://bulk-meta-ai-image-generator-web.vercel.app/api/prompts" : `${location.origin}/api/prompts`,
+  toast,
+  onUseProjectText: (validation, sourceName) => {
+    if (loadProjectFromValidation(validation, sourceName)) {
+      $("dashboard-card").scrollIntoView({ behavior: "smooth", block: "start" });
+      start();
+    }
+  },
 });
 
 // ---------- the queue loop ----------
@@ -391,7 +363,6 @@ function render() {
   const badge = $("run-badge");
   badge.textContent = { idle: "Idle", running: "Running", pausing: "Pausing…", paused: "Paused", stopping: "Stopping…", stopped: "Stopped", finished: "Finished" }[run.state] || run.state;
   badge.className = `badge ${run.state}`;
-  $("project-label").textContent = project ? `Loaded: ${project.sourceName}` : "";
   $("stat-project").textContent = project ? project.name : "—";
   $("stat-total").textContent = c ? c.total : 0;
   $("stat-completed").textContent = c ? c.completed : 0;
@@ -476,59 +447,6 @@ function toast(message) {
   toastTimer = setTimeout(() => el.classList.add("hidden"), 4500);
 }
 
-
-// ---------- paste prompts as plain text ----------
-
-let generatedJsonText = null;
-$("btn-toggle-paste").addEventListener("click", () => {
-  const panel = $("paste-panel");
-  panel.classList.toggle("hidden");
-  if (!panel.classList.contains("hidden")) $("paste-text").focus();
-});
-$("btn-paste-txt").addEventListener("click", () => $("paste-file").click());
-$("paste-file").addEventListener("change", async () => {
-  const f = $("paste-file").files[0];
-  if (!f) return;
-  $("paste-text").value = await f.text();
-  if (!$("paste-project").value.trim()) $("paste-project").value = f.name.replace(/\.[^.]*$/, "");
-  $("paste-file").value = "";
-  updatePasteCount();
-});
-$("paste-text").addEventListener("input", updatePasteCount);
-function updatePasteCount() {
-  const n = splitPrompts($("paste-text").value).length;
-  $("paste-count").textContent = n ? `${n} prompt(s) detected` : "";
-}
-$("btn-paste-convert").addEventListener("click", () => {
-  const text = $("paste-text").value;
-  if (!text.trim()) { toast("Paste at least one prompt first."); return; }
-  const project = $("paste-project").value.trim() || "Untitled Project";
-  const file = textToPromptFile(text, { project, defaultAspectRatio: $("paste-aspect").value || null });
-  if (!file.prompts.length) { toast("No prompts were found in the text."); return; }
-  generatedJsonText = JSON.stringify(file, null, 2);
-  const sourceName = `${file.project.replace(/[^\w.-]+/g, "_")}.json`;
-  const result = validatePromptFile(generatedJsonText, sourceName);
-  showValidation(result);
-  if (result.ok) {
-    pendingValidation = result;
-    pendingSourceName = sourceName;
-    showPreview(result);
-    $("btn-download-json").classList.remove("hidden");
-    $("preview").scrollIntoView({ behavior: "smooth", block: "start" });
-  } else {
-    hidePreview();
-  }
-});
-$("btn-download-json").addEventListener("click", () => {
-  if (!generatedJsonText) return;
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([generatedJsonText], { type: "application/json" }));
-  a.download = pendingSourceName || "prompts.json";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-});
 
 // ---------- boot: recover after a reload ----------
 

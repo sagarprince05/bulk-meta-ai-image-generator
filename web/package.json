@@ -1,0 +1,9 @@
+{
+  "name": "bulk-meta-ai-image-generator-web",
+  "version": "1.4.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  }
+}

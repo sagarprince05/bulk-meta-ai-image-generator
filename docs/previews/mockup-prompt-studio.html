@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Preview: Prompt Studio</title>
+<link rel="stylesheet" href="dashboard.css" />
+<style>
+  .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .tab { padding: 8px 14px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; cursor: pointer; color: var(--muted); font-weight: 500; }
+  .tab.active { background: var(--bg); border-color: var(--border); color: var(--text); }
+  .studio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .field input, .field select, .field textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+  .key-row { display: flex; gap: 8px; align-items: center; }
+  .key-row input { flex: 1; }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+  .prompt-list { display: grid; gap: 8px; margin-top: 12px; }
+  .prompt-row { display: grid; grid-template-columns: 28px 180px 1fr auto; gap: 8px; align-items: start; background: var(--bg); border-radius: 8px; padding: 8px; }
+  .prompt-row .num { font-weight: 600; color: var(--muted); padding-top: 8px; }
+  .prompt-row input, .prompt-row textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); font: inherit; }
+  .prompt-row textarea { min-height: 54px; resize: vertical; }
+  .row-actions { display: flex; flex-direction: column; gap: 4px; }
+  .note { background: var(--info-bg); color: var(--info); border-radius: 8px; padding: 10px 12px; font-size: 12px; }
+  .tag { display: inline-block; background: var(--card); border: 1px solid var(--border); border-radius: 99px; padding: 3px 10px; font-size: 12px; margin: 2px; cursor: pointer; }
+  .preview-label { position: fixed; top: 8px; right: 12px; background: var(--warn-bg); color: var(--warn); padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; z-index: 9; }
+</style>
+</head>
+<body>
+<div class="preview-label">PREVIEW / MOCKUP</div>
+<main>
+  <section class="card">
+    <div class="card-head"><h2>2. Prompts</h2><span class="muted small">Pick any way to add prompts; the result is always the same editable list below.</span></div>
+    <div class="tabs">
+      <div class="tab">Upload JSON</div>
+      <div class="tab">Paste text</div>
+      <div class="tab">Type manually</div>
+      <div class="tab active">Generate with Claude</div>
+    </div>
+
+    <div class="studio-grid">
+      <div class="field" style="grid-column: 1 / -1">
+        <span>Claude API key <span class="pill">saved in this browser only</span></span>
+        <div class="key-row">
+          <input type="password" value="sk-ant-api03-••••••••••••••••••••••••••••" />
+          <button class="btn ghost small">Show</button>
+          <button class="btn ghost small">Test key</button>
+          <button class="btn ghost small">Forget</button>
+        </div>
+        <span class="muted small">Your key is stored locally and sent only to api.anthropic.com from your browser. Prompt generation uses Claude Haiku (~₹0.05 per 10 prompts); you can switch model in Settings.</span>
+      </div>
+      <div class="field" style="grid-column: 1 / -1">
+        <span>What do you want images of?</span>
+        <textarea rows="3">Diwali celebration scenes for a YouTube video: courtyards with diyas, palaces with fireworks, Lakshmi puja, family moments, rangoli close-ups. Warm, photorealistic, cinematic.</textarea>
+      </div>
+      <div class="field"><span>How many prompts</span><input type="number" value="10" /></div>
+      <div class="field"><span>Aspect ratio</span><select><option>16:9 (landscape)</option><option>9:16</option><option>1:1</option></select></div>
+      <div class="field"><span>Style (optional)</span><input value="photorealistic, cinematic lighting, 4K, no text, no watermark" /></div>
+      <div class="field"><span>Project name</span><input value="Diwali Images" /></div>
+      <div style="grid-column: 1 / -1">
+        <span class="muted small">Quick styles:</span>
+        <span class="tag">Photorealistic</span><span class="tag">Cinematic</span><span class="tag">3D clay</span><span class="tag">Watercolor</span><span class="tag">Anime</span><span class="tag">Product shot</span>
+      </div>
+      <div style="grid-column: 1 / -1; display: flex; gap: 8px; align-items: center">
+        <button class="btn primary">Generate 10 prompts with Claude</button>
+        <button class="btn">Generate 5 more</button>
+        <span class="muted small">Generated 10 prompts in 6s · ~2,100 tokens</span>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:14px">Review and edit below. Nothing is sent to Meta AI until you press "Use these prompts". Filenames are suggested from each prompt and can be changed.</div>
+
+    <div class="prompt-list">
+      <div class="prompt-row">
+        <div class="num">1</div>
+        <input value="diwali_courtyard_diyas" />
+        <textarea>Create a beautiful Diwali celebration in a traditional Indian courtyard decorated with glowing clay diyas, colorful rangoli, marigold garlands and warm golden fairy lights, photorealistic, cinematic lighting, 4K, no text, no watermark.</textarea>
+        <div class="row-actions"><button class="btn small ghost">Rewrite</button><button class="btn small ghost">Delete</button></div>
+      </div>
+      <div class="prompt-row">
+        <div class="num">2</div>
+        <input value="diwali_palace_fireworks" />
+        <textarea>Generate a breathtaking Diwali night scene featuring a magnificent Indian palace illuminated by thousands of golden lights, colorful fireworks in the sky, reflections on a lake, cinematic wide-angle photography, ultra-realistic, 4K.</textarea>
+        <div class="row-actions"><button class="btn small ghost">Rewrite</button><button class="btn small ghost">Delete</button></div>
+      </div>
+      <div class="prompt-row">
+        <div class="num">3</div>
+        <input value="lakshmi_puja_setup" />
+        <textarea>Create an elegant Diwali Lakshmi Puja setup with a decorated goddess Lakshmi idol, brass diyas, lotus flowers, marigold garlands, warm golden lighting, authentic Indian festive atmosphere, highly detailed, photorealistic.</textarea>
+        <div class="row-actions"><button class="btn small ghost">Rewrite</button><button class="btn small ghost">Delete</button></div>
+      </div>
+      <div class="prompt-row" style="opacity:.7">
+        <div class="num">4</div>
+        <input value="(7 more rows…)" />
+        <textarea>…</textarea>
+        <div class="row-actions"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:12px; align-items:center; flex-wrap:wrap">
+      <button class="btn">+ Add a prompt (type your own)</button>
+      <button class="btn ghost">Download JSON</button>
+      <span class="spacer"></span>
+      <span class="muted small">10 prompts · Project "Diwali Images" · 16:9</span>
+      <button class="btn primary">Use these prompts</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Same panel, "Type manually" tab</h2></div>
+    <div class="tabs">
+      <div class="tab">Upload JSON</div><div class="tab">Paste text</div><div class="tab active">Type manually</div><div class="tab">Generate with Claude</div>
+    </div>
+    <div class="prompt-list">
+      <div class="prompt-row">
+        <div class="num">1</div>
+        <input placeholder="filename (auto)" value="moses_red_sea" />
+        <textarea>Create a cinematic biblical scene of Moses standing before the parted Red Sea, towering walls of water, dramatic divine light.</textarea>
+        <div class="row-actions"><button class="btn small ghost">Improve with Claude</button><button class="btn small ghost">Delete</button></div>
+      </div>
+      <div class="prompt-row">
+        <div class="num">2</div>
+        <input placeholder="filename (auto)" />
+        <textarea placeholder="Type your prompt here…"></textarea>
+        <div class="row-actions"><button class="btn small ghost">Improve with Claude</button><button class="btn small ghost">Delete</button></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:12px; align-items:center">
+      <button class="btn">+ Add a prompt</button>
+      <span class="spacer"></span>
+      <button class="btn primary">Use these prompts</button>
+    </div>
+    <p class="muted small" style="margin-top:10px">"Improve with Claude" and "Rewrite" only appear when a Claude API key is saved; without a key the tool works exactly as today.</p>
+  </section>
+</main>
+</body>
+</html>

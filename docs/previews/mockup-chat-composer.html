@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Preview: Chat-style prompt composer</title>
+<link rel="stylesheet" href="dashboard.css" />
+<style>
+  .composer { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); padding: 12px 14px; }
+  .composer textarea { width: 100%; min-height: 96px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; line-height: 1.5; resize: vertical; outline: none; }
+  .composer-bar { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .icon-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--card); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .mode { display: inline-flex; border: 1px solid var(--border); border-radius: 99px; overflow: hidden; }
+  .mode span { padding: 6px 12px; font-size: 12px; cursor: pointer; color: var(--muted); }
+  .mode span.on { background: var(--primary); color: #fff; }
+  .send { margin-left: auto; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); border: 0; color: #fff; font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 99px; padding: 4px 10px; font-size: 12px; }
+  .chip b { font-weight: 600; }
+  .chip .x { color: var(--muted); cursor: pointer; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .thread { display: grid; gap: 10px; margin-bottom: 14px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45; }
+  .msg.user { background: var(--info-bg); color: var(--text); margin-left: auto; border-bottom-right-radius: 4px; }
+  .msg.tool { background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .prompt-list { display: grid; gap: 8px; margin-top: 10px; }
+  .prompt-row { display: grid; grid-template-columns: 28px 170px 1fr auto; gap: 8px; align-items: start; background: var(--bg); border-radius: 8px; padding: 8px; }
+  .prompt-row .num { font-weight: 600; color: var(--muted); padding-top: 8px; }
+  .prompt-row input, .prompt-row textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); font: inherit; }
+  .prompt-row textarea { min-height: 50px; resize: vertical; }
+  .row-actions { display: flex; flex-direction: column; gap: 4px; }
+  .sticky-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .preview-label { position: fixed; top: 8px; right: 12px; background: var(--warn-bg); color: var(--warn); padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; z-index: 9; }
+  .meta-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .meta-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; }
+</style>
+</head>
+<body>
+<div class="preview-label">PREVIEW / MOCKUP</div>
+<main>
+  <section class="card">
+    <div class="card-head">
+      <h2>2. Prompts</h2>
+      <span class="meta-badge"><i></i> Images are generated with Meta AI (your own login)</span>
+    </div>
+
+    <div class="thread">
+      <div class="msg user">
+        <b>test_prompts_20.json</b> attached · 20 prompts
+        <div class="meta">You · 10:41</div>
+      </div>
+      <div class="msg tool">
+        Added <b>20 prompts</b> from test_prompts_20.json to the list below (project "Bible Stories 20", 16:9). Nothing was changed in your prompts.
+        <div class="meta">Tool · 10:41</div>
+      </div>
+      <div class="msg user">
+        Write 5 more prompts about Diwali: courtyard diyas, palace fireworks, Lakshmi puja, family moments, rangoli close-up. Photorealistic, cinematic, 16:9.
+        <div class="meta">You · 10:43</div>
+      </div>
+      <div class="msg tool">
+        Wrote <b>5 prompts</b> with AI and added them as #21–#25. Review or edit them below, then press <b>Generate images with Meta AI</b>.
+        <div class="meta">AI prompt writer · 10:43 · you can also turn AI off and just add your text as prompts</div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="chips">
+        <span class="chip">📄 <b>diwali_prompts.txt</b> <span class="x">✕</span></span>
+        <span class="chip">📁 <b>bible_prompts/</b> 3 files <span class="x">✕</span></span>
+      </div>
+      <textarea placeholder="Type your prompts here (one per line, or a numbered list), or describe what you want and let AI write the prompts…"></textarea>
+      <div class="composer-bar">
+        <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> Attach files</button>
+        <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Attach folder</button>
+        <span class="mode"><span class="on">Add my text as prompts</span><span>Let AI write prompts</span></span>
+        <select class="icon-btn" style="padding:6px 10px"><option>16:9</option><option>9:16</option><option>1:1</option></select>
+        <button class="send" title="Add to list">➤</button>
+      </div>
+      <div class="hint">Accepted: .json (tool format), .txt / .md (plain prompts), or a folder with those files. Enter = new line, Ctrl+Enter = send. No API keys are shown or needed anywhere in this tool.</div>
+    </div>
+
+    <div class="card-head" style="margin-top:16px"><h3 style="margin:0;font-size:14px">Prompt list · 25 prompts · Project <input value="Diwali & Bible" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;width:160px"></h3><span class="muted small">Edit any row. Filenames are auto-suggested.</span></div>
+    <div class="prompt-list">
+      <div class="prompt-row"><div class="num">1</div><input value="creation_light" /><textarea>Create a cinematic, highly detailed image of the first light of creation breaking through primordial darkness, swirling clouds, divine golden glow, 4K quality.</textarea><div class="row-actions"><button class="btn small ghost">Delete</button></div></div>
+      <div class="prompt-row" style="opacity:.6"><div class="num">…</div><input value="(19 more from the JSON)" /><textarea>…</textarea><div class="row-actions"></div></div>
+      <div class="prompt-row"><div class="num">21</div><input value="diwali_courtyard_diyas" /><textarea>Create a beautiful Diwali celebration in a traditional Indian courtyard decorated with glowing clay diyas, colorful rangoli, marigold garlands and warm golden fairy lights, photorealistic, cinematic lighting, 4K, no text.</textarea><div class="row-actions"><button class="btn small ghost">Rewrite</button><button class="btn small ghost">Delete</button></div></div>
+      <div class="prompt-row"><div class="num">22</div><input value="diwali_palace_fireworks" /><textarea>Generate a breathtaking Diwali night scene of a magnificent Indian palace lit by thousands of golden lights, fireworks over a lake, cinematic wide-angle, ultra-realistic, 4K.</textarea><div class="row-actions"><button class="btn small ghost">Rewrite</button><button class="btn small ghost">Delete</button></div></div>
+      <div class="prompt-row"><div class="num">23</div><input value="lakshmi_puja_setup" /><textarea>Create an elegant Diwali Lakshmi Puja setup with a decorated goddess Lakshmi idol, brass diyas, lotus flowers, marigold garlands, warm golden light, photorealistic.</textarea><div class="row-actions"><button class="btn small ghost">Rewrite</button><button class="btn small ghost">Delete</button></div></div>
+    </div>
+
+    <div class="sticky-actions">
+      <button class="btn ghost">Download as JSON</button>
+      <button class="btn ghost">Clear list</button>
+      <span class="spacer"></span>
+      <span class="muted small">25 prompts ready · 16:9 · saved to Desktop/Diwali_&_Bible/</span>
+      <button class="btn primary">Generate images with Meta AI</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>How the AI prompt writer works (no key in the UI)</h2></div>
+    <ul class="small" style="margin:0;padding-left:18px;line-height:1.7">
+      <li>The website has a small server function on Vercel. The Claude API key lives there as a secret environment variable; it is never sent to the browser and never shown anywhere.</li>
+      <li>Only the prompt-writing step uses it ("Let AI write prompts" and "Rewrite"). Image generation always goes through Meta AI in the user's own browser, unchanged.</li>
+      <li>Limits to protect your bill: max 50 prompts per request, 300 per user per day; the model is Claude Haiku, roughly ₹0.05 per 10 prompts. You can change limits or turn the feature off from Vercel without redeploying.</li>
+      <li>If the key is not configured, the AI toggle is simply hidden and everything else works exactly as today.</li>
+      <li>Desktop (.exe) version: same screen, and the AI feature calls the same Vercel function, so no key ships inside the app either.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
