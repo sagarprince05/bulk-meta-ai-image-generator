@@ -51,6 +51,16 @@ function log(level, message) {
 // ---------- setup: extension + folder ----------
 
 async function checkExtension() {
+  if (window.desktop) {
+    extInfo = await pingExtension();
+    $("ext-dot").className = "dot ok";
+    $("ext-status").textContent = `Built-in Meta AI browser ready (ImageRush ${extInfo.version}). No extension needed.`;
+    ["ext-download", "btn-ext-help", "btn-ext-recheck", "btn-forget-dir"].forEach((id) => $(id)?.classList.add("hidden"));
+    $("btn-open-meta")?.classList.remove("hidden");
+    $("btn-open-folder")?.classList.remove("hidden");
+    render();
+    return;
+  }
   if (!extensionApiAvailable()) {
     extInfo = { installed: false, error: "This browser cannot talk to extensions. Use Chrome, Brave or Edge." };
   } else {
@@ -97,6 +107,8 @@ $("btn-choose-dir").addEventListener("click", async () => {
 });
 $("btn-forget-dir").addEventListener("click", async () => { await forgetRootFolder(); rootHandle = null; await refreshFolderStatus(); });
 $("btn-ext-recheck").addEventListener("click", checkExtension);
+$("btn-open-meta")?.addEventListener("click", () => window.desktop?.meta.show());
+$("btn-open-folder")?.addEventListener("click", () => window.desktop?.fs.openFolder(state.project ? projectFolderOf(state.project) : ""));
 $("btn-ext-help").addEventListener("click", () => $("ext-help").classList.toggle("hidden"));
 $("btn-test").addEventListener("click", async () => {
   toast("Checking the meta.ai tab…");
@@ -124,10 +136,10 @@ function loadProjectFromValidation(validation, sourceName) {
   return true;
 }
 
-const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === "file:";
 initComposer({
   root: $("composer"),
-  aiEndpoint: isLocal ? "https://bulk-meta-ai-image-generator-web.vercel.app/api/prompts" : `${location.origin}/api/prompts`,
+  aiEndpoint: window.desktop ? "desktop" : isLocal ? "https://bulk-meta-ai-image-generator-web.vercel.app/api/prompts" : `${location.origin}/api/prompts`,
   toast,
   onUseProjectText: (validation, sourceName) => {
     if (loadProjectFromValidation(validation, sourceName)) {
@@ -225,7 +237,8 @@ async function processItem(index, writer) {
       const img = reply.images[v];
       if (img.note) log("warn", `${item.filename}: ${img.note}`);
       let blob;
-      if (img.dataUrl) blob = dataUrlToBlob(img.dataUrl);
+      if (img.blob) blob = img.blob;
+      else if (img.dataUrl) blob = dataUrlToBlob(img.dataUrl);
       else {
         const resp = await fetch(img.url).catch(() => null);
         if (!resp || !resp.ok) throw Object.assign(new Error("The image could not be read from Meta's server."), { retryable: true });

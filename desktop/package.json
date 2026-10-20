@@ -1,0 +1,36 @@
+{
+  "name": "imagerush",
+  "productName": "ImageRush",
+  "version": "1.0.0",
+  "description": "Type or upload prompts, generate images one by one through your own Meta AI login, and save them into folders on your PC.",
+  "author": "Humyn Labs",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-renderer.mjs",
+    "start": "npm run sync && electron .",
+    "dist": "npm run sync && electron-builder --win nsis portable",
+    "dist:dir": "npm run sync && electron-builder --win dir"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "ai.humynlabs.imagerush",
+    "productName": "ImageRush",
+    "artifactName": "ImageRush-Setup-${version}.${ext}",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "meta-adapter.js", "renderer/**/*", "icons/**/*", "!**/*.map"],
+    "win": { "target": ["nsis", "portable"], "icon": "icons/icon.ico" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "ImageRush",
+      "artifactName": "ImageRush-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "ImageRush-Portable-${version}.${ext}" }
+  }
+}

@@ -8,3 +8,8 @@ node_modules/
 QA/evidence/*.jpg
 .DS_Store
 Thumbs.db
+
+# desktop app build outputs (renderer/ is generated from web/ by npm run sync)
+desktop/node_modules/
+desktop/dist/
+desktop/renderer/

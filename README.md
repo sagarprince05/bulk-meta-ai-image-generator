@@ -86,6 +86,23 @@ Things to know:
 - Images are converted to PNG in the browser when possible; if Meta's image host blocks that, the original
   format (usually JPEG or WebP) is saved instead and recorded in the manifest.
 
+## Desktop app (Windows .exe, no extension needed)
+
+`desktop/` is an Electron app with the Meta AI browser built in. Users install `ImageRush-Setup-<version>.exe`
+(or run the portable exe), log in to Meta AI once inside the app's own window, and everything else works the same
+as the website: type/attach prompts, optional AI prompt writing (through the website's API, no key in the app),
+and images saved straight into a folder of their choice (default `Desktop\ImageRush\<Project>\`).
+
+```bash
+cd desktop
+npm install
+npm start          # run locally (copies web/ into desktop/renderer first)
+npm run dist       # builds dist/ImageRush-Setup-<version>.exe and ImageRush-Portable-<version>.exe
+```
+
+The installer is unsigned, so Windows SmartScreen shows "Unknown publisher" the first time
+("More info" → "Run anyway"). A code-signing certificate removes that warning.
+
 ## Provider architecture
 
 - `extension/lib/validation.js`: JSON parsing and validation (pure).

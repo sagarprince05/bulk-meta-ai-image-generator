@@ -191,6 +191,7 @@ export function initComposer({ root, aiEndpoint, onUseProjectText, toast }) {
   }
 
   async function callAi(payload) {
+    if (aiEndpoint === "desktop" && window.desktop?.ai) return window.desktop.ai.prompts(payload);
     if (!aiEndpoint) throw new Error("AI prompt writing is not available in this build.");
     const resp = await fetch(aiEndpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await resp.json().catch(() => ({}));
@@ -200,6 +201,7 @@ export function initComposer({ root, aiEndpoint, onUseProjectText, toast }) {
 
   async function checkAi() {
     if (!aiEndpoint) { aiAvailable = false; }
+    else if (aiEndpoint === "desktop" && window.desktop?.ai) { aiAvailable = await window.desktop.ai.available().catch(() => false); }
     else {
       try {
         const resp = await fetch(aiEndpoint, { method: "OPTIONS" });
