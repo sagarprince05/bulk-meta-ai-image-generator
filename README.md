@@ -88,6 +88,8 @@ Things to know:
 
 ## Desktop app (Windows .exe, no extension needed)
 
+Download: <https://github.com/sagarprince05/bulk-meta-ai-image-generator/releases/latest>
+
 `desktop/` is an Electron app with the Meta AI browser built in. Users install `ImageRush-Setup-<version>.exe`
 (or run the portable exe), log in to Meta AI once inside the app's own window, and everything else works the same
 as the website: type/attach prompts, optional AI prompt writing (through the website's API, no key in the app),
