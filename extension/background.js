@@ -115,7 +115,7 @@ async function ensureContentScript(tabId) {
     // not injected yet (tab was open before the extension was installed/reloaded)
   }
   await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-  await sleepWithKeepalive(500);
+  await sleepWithKeepalive(150);
   const pong = await chrome.tabs.sendMessage(tabId, { type: "ping" });
   if (!pong || !pong.ok) throw new Error("Could not connect to the meta.ai page.");
 }
@@ -126,13 +126,25 @@ async function prepareMetaTab(newChat) {
   if (!tab) {
     tab = await chrome.tabs.create({ url: META_HOME, active: true });
     await waitForTabLoad(tab.id);
-    await sleepWithKeepalive(1500);
-  } else if (newChat || !META_MATCH.test(tab.url || "")) {
+    await ensureContentScript(tab.id);
+    return tab.id;
+  }
+  if (!META_MATCH.test(tab.url || "")) {
     await chrome.tabs.update(tab.id, { url: META_HOME });
     await waitForTabLoad(tab.id);
-    await sleepWithKeepalive(1500);
+    await ensureContentScript(tab.id);
+    return tab.id;
   }
   await ensureContentScript(tab.id);
+  if (newChat) {
+    // Fast path: in-page "New chat" (no reload). Fall back to loading the home page.
+    const r = await chrome.tabs.sendMessage(tab.id, { type: "new_chat" }).catch(() => null);
+    if (!r || !r.ok) {
+      await chrome.tabs.update(tab.id, { url: META_HOME });
+      await waitForTabLoad(tab.id);
+      await ensureContentScript(tab.id);
+    }
+  }
   return tab.id;
 }
 

@@ -3,8 +3,8 @@
 (() => {
   if (window.__imagerush) return;
   const MIN_IMAGE_SIDE = 256;
-  const POLL_MS = 1000;
-  const STABLE_MS = 4000;
+  const POLL_MS = 400;
+  const STABLE_MS = 2200;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const isVisible = (el) => {
     if (!el || !el.isConnected) return false;
@@ -86,9 +86,40 @@
     for (const type of ["keydown", "keypress", "keyup"]) el.dispatchEvent(new KeyboardEvent(type, { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true }));
   }
 
+
+  /** Start a fresh conversation without reloading the page: the sidebar "New chat" button or its shortcut. */
+  async function newChat() {
+    const beforeUrl = location.href;
+    const btn = [...document.querySelectorAll('a, button, [role="button"], [role="link"]')].find((el) => isVisible(el) && /^\s*new chat\b/i.test(el.textContent || "") || /new chat/i.test(el.getAttribute("aria-label") || ""));
+    if (btn) btn.click();
+    else document.dispatchEvent(new KeyboardEvent("keydown", { key: "O", code: "KeyO", keyCode: 79, ctrlKey: true, shiftKey: true, bubbles: true }));
+    // Ready when the URL left the old conversation (or was already home) and the composer is present and empty.
+    const deadline = Date.now() + 8000;
+    while (Date.now() < deadline) {
+      await sleep(150);
+      const c = findComposer();
+      const text = c ? (c.tagName === "TEXTAREA" ? c.value : c.innerText || "").trim() : "x";
+      const urlOk = location.href !== beforeUrl || !/\/prompt\//.test(beforeUrl);
+      if (c && !text && urlOk && candidateImages().length === 0) return true;
+    }
+    return false;
+  }
+
+  /** Wait until the chat box exists (after a navigation) instead of sleeping a fixed time. */
+  async function waitForComposer(timeoutMs = 15000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const c = findComposer();
+      if (c) return c;
+      if (loginWallPresent()) return null;
+      await sleep(150);
+    }
+    return findComposer();
+  }
+
   async function generate({ prompt, timeoutMs, allVariants }) {
     if (loginWallPresent()) return { ok: false, retryable: false, loginRequired: true, error: "You are not logged in to Meta AI. Log in in the Meta AI window, then press Resume." };
-    const composer = findComposer();
+    const composer = await waitForComposer();
     if (!composer) return { ok: false, retryable: true, error: "Could not find the chat box on meta.ai. Open the Meta AI window and check that the page loaded." };
     const before = new Set(candidateImages().map(imageKey));
     await enterPrompt(composer, prompt);
@@ -96,7 +127,7 @@
     if (!typed || typed.trim().slice(0, 40) !== prompt.trim().slice(0, 40)) return { ok: false, retryable: true, error: "The prompt could not be typed into the chat box." };
     const sendButton = findSendButton(composer);
     if (sendButton) sendButton.click(); else pressEnter(composer);
-    await sleep(1500);
+    await sleep(700);
     const still = (composer.tagName === "TEXTAREA" ? composer.value : composer.innerText || "").trim();
     if (still && still.slice(0, 40) === prompt.trim().slice(0, 40)) { pressEnter(composer); await sleep(1500); }
 
@@ -129,5 +160,5 @@
     return { ok: true, url: location.href, loggedIn: !loginWallPresent(), composerFound: !!composer, composerKind: composer ? composer.tagName.toLowerCase() : null, sendButtonFound: !!findSendButton(composer), visibleImages: candidateImages().length };
   }
 
-  window.__imagerush = { generate, diagnose };
+  window.__imagerush = { generate, diagnose, newChat };
 })();

@@ -86,14 +86,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function prepareMeta(newChat) {
   const win = ensureMetaWindow();
   const url = win.webContents.getURL();
-  if (newChat || !/^https:\/\/(www\.)?meta\.ai\//.test(url)) {
+  if (win.webContents.isLoading()) await waitForLoad(win);
+  if (!/^https:\/\/(www\.)?meta\.ai\//.test(url)) {
     win.loadURL(META_HOME);
     await waitForLoad(win);
-    await sleep(1500);
-  } else if (win.webContents.isLoading()) {
-    await waitForLoad(win);
+    await win.webContents.executeJavaScript(ADAPTER_SRC, true);
+    return win;
   }
   await win.webContents.executeJavaScript(ADAPTER_SRC, true);
+  if (newChat) {
+    const ok = await win.webContents.executeJavaScript("window.__imagerush.newChat()", true).catch(() => false);
+    if (!ok) {
+      win.loadURL(META_HOME);
+      await waitForLoad(win);
+      await win.webContents.executeJavaScript(ADAPTER_SRC, true);
+    }
+  }
   return win;
 }
 

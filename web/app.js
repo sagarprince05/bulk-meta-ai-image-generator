@@ -178,6 +178,7 @@ async function runLoop() {
   if (loopActive) return;
   loopActive = true;
   const writer = new ProjectWriter(rootHandle, state.project);
+  let reportsDue = 0;
   try {
     for (;;) {
       if (state.run.state === RUN.PAUSING) { state.run.state = RUN.PAUSED; log("info", "Paused."); save(); break; }
@@ -195,7 +196,8 @@ async function runLoop() {
         break;
       }
       const result = await processItem(index, writer);
-      await writeReports(writer);
+      reportsDue += 1;
+      if (reportsDue >= 5 || !result.ok) { await writeReports(writer); reportsDue = 0; }
       save();
       if (result.loginRequired) { state.run.state = RUN.PAUSED; log("warn", "Paused: log in to meta.ai in its tab, then press Resume."); save(); break; }
       const limit = state.settings.pauseAfterConsecutiveFailures;
@@ -214,6 +216,7 @@ async function runLoop() {
   } finally {
     loopActive = false;
     state.run.currentIndex = -1;
+    if (reportsDue > 0) await writeReports(writer).catch(() => {});
     save();
     if (state.run.state === RUN.RUNNING && nextPendingIndex(state.project.items) !== -1) runLoop();
   }

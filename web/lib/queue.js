@@ -19,9 +19,9 @@ export const RUN = Object.freeze({
 });
 
 export const DEFAULT_SETTINGS = Object.freeze({
-  delaySeconds: 8,
+  delaySeconds: 3,
   maxRetries: 2,
-  retryBackoffSeconds: 15,
+  retryBackoffSeconds: 10,
   generationTimeoutSeconds: 180,
   pauseAfterConsecutiveFailures: 3,
   outputFormat: "png", // "png" or "original"
