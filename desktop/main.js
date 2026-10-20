@@ -289,6 +289,8 @@ app.whenReady().then(() => {
         })`, true);
         console.log("SMOKE " + JSON.stringify(info));
         if (process.env.IMAGERUSH_SHOT) {
+          await win.webContents.executeJavaScript('document.getElementById("settings-dialog").showModal()', true);
+          await sleep(300);
           const img = await win.webContents.capturePage();
           fssync.writeFileSync(path.join(process.env.IMAGERUSH_SHOT, "dashboard.png"), img.toPNG());
           const img2 = await metaView.webContents.capturePage();

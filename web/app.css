@@ -223,7 +223,9 @@ a { color: var(--primary); }
 .check { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ---- dialogs, toast ---- */
-dialog { border: 0; border-radius: var(--r-card); background: var(--surface); color: var(--text); padding: 22px 24px; max-width: 720px; width: calc(100% - 32px); box-shadow: var(--shadow-float); }
+/* Dialogs and toasts are centred inside the left pane only: the Meta AI panel on the right is a native
+   layer that always draws on top, so anything placed under it would be hidden. */
+dialog { position: fixed; top: 50%; left: calc((100vw - var(--panel)) / 2); right: auto; transform: translate(-50%, -50%); margin: 0; border: 0; border-radius: var(--r-card); background: var(--surface); color: var(--text); padding: 22px 24px; width: min(720px, calc(100vw - var(--panel) - 32px)); max-height: calc(100vh - 32px); overflow: auto; box-shadow: var(--shadow-float); }
 dialog::backdrop { background: rgba(15,23,42,.45); }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 16px; margin: 14px 0; }
 .grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
@@ -231,7 +233,7 @@ dialog::backdrop { background: rgba(15,23,42,.45); }
 .grid input[type="number"], .grid input[type="text"], .grid select { height: 40px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--r-ctl); background: var(--surface); color: var(--text); font: inherit; }
 .grid input:focus, .grid select:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
 .dialog-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
-.toast { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 20; max-width: 80vw; box-shadow: var(--shadow-float); font-size: 13px; }
+.toast { position: fixed; bottom: 92px; left: calc((100vw - var(--panel)) / 2); transform: translateX(-50%); background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 20; max-width: 80vw; box-shadow: var(--shadow-float); font-size: 13px; }
 
 /* ---- responsive ---- */
 @media (max-width: 1024px) {

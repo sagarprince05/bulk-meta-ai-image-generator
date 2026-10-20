@@ -1,7 +1,7 @@
 {
   "name": "imagerush",
   "productName": "ImageRush",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Type or upload prompts, generate images one by one through your own Meta AI login, and save them into folders on your PC.",
   "author": "Humyn Labs",
   "license": "MIT",
