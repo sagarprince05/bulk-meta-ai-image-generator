@@ -1,7 +1,7 @@
-// ImageRush desktop: the dashboard window plus a built-in Meta AI window.
-// Nothing here talks to any server except meta.ai (in the user's own session) and the
-// ImageRush website's prompt-writing API (no credentials in this app).
-const { app, BrowserWindow, ipcMain, dialog, shell, session, net } = require("electron");
+// ImageRush desktop: one window with the dashboard on the left and the built-in Meta AI browser on the right.
+// Nothing here talks to any server except meta.ai (in the user's own session) and the ImageRush website's
+// prompt-writing API (no credentials live in this app).
+const { app, BrowserWindow, WebContentsView, ipcMain, dialog, shell, session, net } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const fssync = require("node:fs");
@@ -10,117 +10,159 @@ const META_HOME = "https://www.meta.ai/";
 const META_PARTITION = "persist:metaai";
 const AI_ENDPOINT = "https://bulk-meta-ai-image-generator-web.vercel.app/api/prompts";
 const ADAPTER_SRC = fssync.readFileSync(path.join(__dirname, "meta-adapter.js"), "utf-8");
+const MIN_PANEL = 440;
 
-let dashboard = null;
-let metaWin = null;
-let settings = { outputRoot: null };
+let win = null; // the one app window
+let metaView = null; // Meta AI browser docked inside the window
+let panelOpen = true;
+let settings = { outputRoot: null, panelOpen: true };
+let lastStatus = null;
 const settingsPath = () => path.join(app.getPath("userData"), "settings.json");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function loadSettings() {
   try { settings = { ...settings, ...JSON.parse(fssync.readFileSync(settingsPath(), "utf-8")) }; } catch { /* first run */ }
   if (!settings.outputRoot) settings.outputRoot = path.join(app.getPath("desktop"), "ImageRush");
+  panelOpen = settings.panelOpen !== false;
 }
 async function saveSettings() {
   await fs.mkdir(path.dirname(settingsPath()), { recursive: true });
   await fs.writeFile(settingsPath(), JSON.stringify(settings, null, 2));
 }
 
-// ---------- windows ----------
+// ---------- window + embedded Meta AI panel ----------
 
-function createDashboard() {
-  dashboard = new BrowserWindow({
-    width: 1240, height: 900, minWidth: 820, minHeight: 600,
+function panelWidth() {
+  if (!win || !panelOpen) return 0;
+  const [w] = win.getContentSize();
+  return Math.max(MIN_PANEL, Math.round(w * 0.42));
+}
+
+function layout() {
+  if (!win || !metaView) return;
+  const [w, h] = win.getContentSize();
+  const pw = panelWidth();
+  metaView.setBounds(pw ? { x: w - pw, y: 0, width: pw, height: h } : { x: w, y: 0, width: Math.max(MIN_PANEL, Math.round(w * 0.42)), height: h });
+  metaView.setVisible(!!pw);
+  win.webContents.send("panel:changed", { width: pw, open: panelOpen });
+}
+
+function createWindow() {
+  win = new BrowserWindow({
+    width: 1500, height: 920, minWidth: 980, minHeight: 640,
     title: "ImageRush",
     icon: path.join(__dirname, "icons", "icon.png"),
     backgroundColor: "#0f1420",
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
-  dashboard.removeMenu();
-  dashboard.loadFile(path.join(__dirname, "renderer", "index.html"));
-  dashboard.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https:\/\/(www\.)?meta\.ai\//.test(url)) { showMetaWindow(); return { action: "deny" }; }
+  win.removeMenu();
+
+  metaView = new WebContentsView({ webPreferences: { partition: META_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  win.contentView.addChildView(metaView);
+  const wc = metaView.webContents;
+  // A normal browser user agent, so meta.ai serves its regular web app.
+  wc.setUserAgent(wc.getUserAgent().replace(/ Electron\/[\d.]+/, "").replace(/ imagerush\/[\d.]+/i, ""));
+  // Facebook/Instagram login pop-ups must open inside the same session.
+  wc.setWindowOpenHandler(() => ({ action: "allow", overrideBrowserWindowOptions: { webPreferences: { partition: META_PARTITION, sandbox: true }, parent: win, modal: false } }));
+  wc.on("did-finish-load", () => { refreshStatus().catch(() => {}); });
+  wc.on("did-navigate-in-page", () => { refreshStatus().catch(() => {}); });
+  wc.loadURL(META_HOME);
+
+  win.loadFile(path.join(__dirname, "renderer", "index.html"));
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https:\/\/(www\.)?meta\.ai\//.test(url)) { setPanel(true); return { action: "deny" }; }
     if (/^https?:\/\//.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });
-  dashboard.on("closed", () => { dashboard = null; if (metaWin) metaWin.close(); });
+  win.on("resize", layout);
+  win.webContents.on("did-finish-load", layout);
+  win.on("closed", () => { win = null; metaView = null; });
 }
 
-function ensureMetaWindow() {
-  if (metaWin && !metaWin.isDestroyed()) return metaWin;
-  metaWin = new BrowserWindow({
-    width: 1100, height: 820, title: "Meta AI (ImageRush)",
-    icon: path.join(__dirname, "icons", "icon.png"),
-    webPreferences: { partition: META_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true },
-  });
-  metaWin.removeMenu();
-  // A normal browser user agent, so meta.ai serves its regular web app.
-  const ua = metaWin.webContents.getUserAgent().replace(/ Electron\/[\d.]+/, "").replace(/ imagerush\/[\d.]+/i, "");
-  metaWin.webContents.setUserAgent(ua);
-  metaWin.webContents.setWindowOpenHandler(({ url }) => {
-    // Facebook/Instagram login pop-ups must open inside the same session.
-    return { action: "allow", overrideBrowserWindowOptions: { webPreferences: { partition: META_PARTITION, sandbox: true } } };
-  });
-  metaWin.on("closed", () => { metaWin = null; });
-  metaWin.loadURL(META_HOME);
-  return metaWin;
+function setPanel(open) {
+  panelOpen = !!open;
+  settings.panelOpen = panelOpen;
+  saveSettings().catch(() => {});
+  layout();
+  if (panelOpen && metaView) metaView.webContents.focus();
 }
 
-function showMetaWindow() {
-  const w = ensureMetaWindow();
-  if (w.isMinimized()) w.restore();
-  w.show();
-  w.focus();
-}
-
-function waitForLoad(win, timeoutMs = 60000) {
+function waitForLoad(wc, timeoutMs = 60000) {
   return new Promise((resolve, reject) => {
-    if (!win.webContents.isLoading()) return resolve();
+    if (!wc.isLoading()) return resolve();
     const timer = setTimeout(() => reject(new Error("The meta.ai page took too long to load.")), timeoutMs);
-    win.webContents.once("did-finish-load", () => { clearTimeout(timer); resolve(); });
-    win.webContents.once("did-fail-load", (_e, code, desc) => { clearTimeout(timer); reject(new Error(`meta.ai did not load (${desc || code}). Check your internet connection.`)); });
+    wc.once("did-finish-load", () => { clearTimeout(timer); resolve(); });
+    wc.once("did-fail-load", (_e, code, desc) => { clearTimeout(timer); reject(new Error(`meta.ai did not load (${desc || code}). Check your internet connection.`)); });
   });
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function ensureAdapter(wc) {
+  await wc.executeJavaScript(ADAPTER_SRC, true);
+}
 
 async function prepareMeta(newChat) {
-  const win = ensureMetaWindow();
-  const url = win.webContents.getURL();
-  if (win.webContents.isLoading()) await waitForLoad(win);
-  if (!/^https:\/\/(www\.)?meta\.ai\//.test(url)) {
-    win.loadURL(META_HOME);
-    await waitForLoad(win);
-    await win.webContents.executeJavaScript(ADAPTER_SRC, true);
-    return win;
+  if (!metaView) throw new Error("The app window is closed.");
+  const wc = metaView.webContents;
+  if (wc.isLoading()) await waitForLoad(wc);
+  if (!/^https:\/\/(www\.)?meta\.ai\//.test(wc.getURL())) {
+    wc.loadURL(META_HOME);
+    await waitForLoad(wc);
+    await ensureAdapter(wc);
+    return wc;
   }
-  await win.webContents.executeJavaScript(ADAPTER_SRC, true);
+  await ensureAdapter(wc);
   if (newChat) {
-    const ok = await win.webContents.executeJavaScript("window.__imagerush.newChat()", true).catch(() => false);
+    const ok = await wc.executeJavaScript("window.__imagerush.newChat()", true).catch(() => false);
     if (!ok) {
-      win.loadURL(META_HOME);
-      await waitForLoad(win);
-      await win.webContents.executeJavaScript(ADAPTER_SRC, true);
+      wc.loadURL(META_HOME);
+      await waitForLoad(wc);
+      await ensureAdapter(wc);
     }
   }
-  return win;
+  return wc;
+}
+
+async function refreshStatus() {
+  if (!metaView || !win) return null;
+  const wc = metaView.webContents;
+  if (wc.isLoading()) return lastStatus;
+  try {
+    await ensureAdapter(wc);
+    const diag = await wc.executeJavaScript("window.__imagerush.diagnose()", true);
+    lastStatus = { loggedIn: !!diag.loggedIn, ready: !!diag.composerFound, url: diag.url };
+  } catch (exc) {
+    lastStatus = { loggedIn: false, ready: false, error: exc.message };
+  }
+  win.webContents.send("meta:status", lastStatus);
+  return lastStatus;
 }
 
 // ---------- IPC: meta.ai ----------
 
-ipcMain.handle("meta:diagnose", async () => {
-  const win = await prepareMeta(false);
-  return win.webContents.executeJavaScript("window.__imagerush.diagnose()", true);
+ipcMain.handle("meta:status", async () => (await refreshStatus()) || lastStatus || { loggedIn: false, ready: false });
+ipcMain.handle("meta:diagnose", async () => { const wc = await prepareMeta(false); return wc.executeJavaScript("window.__imagerush.diagnose()", true); });
+ipcMain.handle("meta:login", async () => {
+  setPanel(true);
+  const wc = metaView.webContents;
+  if (!/^https:\/\/(www\.)?meta\.ai\//.test(wc.getURL()) || lastStatus?.loggedIn === false) wc.loadURL(META_HOME);
+  return { ok: true };
 });
-
-ipcMain.handle("meta:show", async () => { showMetaWindow(); return { ok: true }; });
+ipcMain.handle("meta:logout", async () => {
+  const ses = session.fromPartition(META_PARTITION);
+  await ses.clearStorageData();
+  metaView?.webContents.loadURL(META_HOME);
+  return { ok: true };
+});
+ipcMain.handle("panel:set", async (_e, { open }) => { setPanel(open); return { open: panelOpen, width: panelWidth() }; });
+ipcMain.handle("panel:get", async () => ({ open: panelOpen, width: panelWidth() }));
 
 ipcMain.handle("meta:generate", async (_e, { prompt, timeoutMs = 180000, allVariants = false, newChat = true }) => {
   if (typeof prompt !== "string" || !prompt.trim()) throw new Error("Empty prompt.");
-  const win = await prepareMeta(newChat);
-  const reply = await win.webContents.executeJavaScript(
+  if (!panelOpen) setPanel(true); // generation happens visibly in the panel
+  const wc = await prepareMeta(newChat);
+  const reply = await wc.executeJavaScript(
     `window.__imagerush.generate(${JSON.stringify({ prompt, timeoutMs: Math.min(Math.max(timeoutMs, 20000), 1800000), allVariants })})`, true);
   if (!reply || !reply.ok) return reply || { ok: false, retryable: true, error: "No reply from the meta.ai page." };
-  // Fetch the image bytes with the meta.ai session (cookies/referrer), outside the page's CORS rules.
   const ses = session.fromPartition(META_PARTITION);
   const images = [];
   for (const img of reply.images) {
@@ -148,7 +190,7 @@ async function uniquePath(dir, base, ext) {
 
 ipcMain.handle("fs:getRoot", async () => ({ root: settings.outputRoot }));
 ipcMain.handle("fs:chooseRoot", async () => {
-  const r = await dialog.showOpenDialog(dashboard, { title: "Choose where ImageRush saves images", defaultPath: settings.outputRoot, properties: ["openDirectory", "createDirectory"] });
+  const r = await dialog.showOpenDialog(win, { title: "Select the folder where ImageRush saves images", defaultPath: settings.outputRoot, buttonLabel: "Use this folder", properties: ["openDirectory", "createDirectory"] });
   if (r.canceled || !r.filePaths[0]) return { root: settings.outputRoot, changed: false };
   settings.outputRoot = r.filePaths[0];
   await saveSettings();
@@ -206,30 +248,31 @@ ipcMain.handle("app:version", () => app.getVersion());
 app.setAppUserModelId("ai.humynlabs.imagerush");
 app.whenReady().then(() => {
   loadSettings();
-  createDashboard();
+  createWindow();
   if (process.env.IMAGERUSH_SMOKE) {
-    // Automated check: boot the dashboard, read its setup status, then quit.
-    dashboard.webContents.once("did-finish-load", async () => {
-      await sleep(2500);
+    win.webContents.once("did-finish-load", async () => {
+      await sleep(4000);
       try {
-        const info = await dashboard.webContents.executeJavaScript(`({
+        const info = await win.webContents.executeJavaScript(`({
           title: document.title,
-          ext: document.getElementById("ext-status").textContent,
-          dir: document.getElementById("dir-status").textContent,
+          setupHidden: document.getElementById("setup-card").classList.contains("hidden"),
+          bar: document.getElementById("desktop-bar")?.innerText.replace(/\\s+/g, " ").slice(0, 160),
           aiVisible: !document.querySelector("[data-mode=ai]").classList.contains("hidden"),
           composer: !!document.getElementById("cmp-send"),
-          openMeta: !document.getElementById("btn-open-meta").classList.contains("hidden"),
-          desktopApi: typeof window.desktop,
+          bodyMargin: getComputedStyle(document.body).marginRight,
         })`, true);
         console.log("SMOKE " + JSON.stringify(info));
-        if (process.env.IMAGERUSH_SMOKE === "meta") {
-          const diag = await dashboard.webContents.executeJavaScript("window.desktop.meta.diagnose()", true);
-          console.log("SMOKE_META " + JSON.stringify(diag));
+        if (process.env.IMAGERUSH_SHOT) {
+          const img = await win.webContents.capturePage();
+          fssync.writeFileSync(path.join(process.env.IMAGERUSH_SHOT, "dashboard.png"), img.toPNG());
+          const img2 = await metaView.webContents.capturePage();
+          fssync.writeFileSync(path.join(process.env.IMAGERUSH_SHOT, "meta-panel.png"), img2.toPNG());
         }
+        if (process.env.IMAGERUSH_SMOKE === "meta") console.log("SMOKE_META " + JSON.stringify(await refreshStatus()));
       } catch (exc) { console.log("SMOKE_ERROR " + exc.message); }
       app.exit(0);
     });
   }
-  app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createDashboard(); });
+  app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on("window-all-closed", () => app.quit());

@@ -50,14 +50,16 @@ function log(level, message) {
 
 // ---------- setup: extension + folder ----------
 
+let desktopUiReady = false;
 async function checkExtension() {
   if (window.desktop) {
     extInfo = await pingExtension();
-    $("ext-dot").className = "dot ok";
-    $("ext-status").textContent = `Built-in Meta AI browser ready (ImageRush ${extInfo.version}). No extension needed.`;
-    ["ext-download", "btn-ext-help", "btn-ext-recheck", "btn-forget-dir"].forEach((id) => $(id)?.classList.add("hidden"));
-    $("btn-open-meta")?.classList.remove("hidden");
-    $("btn-open-folder")?.classList.remove("hidden");
+    if (!desktopUiReady) {
+      desktopUiReady = true;
+      const { initDesktopUi } = await import("./desktop-ui.js");
+      initDesktopUi({ onFolderChanged: () => refreshFolderStatus() });
+      $("btn-open-folder")?.classList.remove("hidden");
+    }
     render();
     return;
   }
